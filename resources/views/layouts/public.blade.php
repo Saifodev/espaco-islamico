@@ -21,7 +21,7 @@
     <meta property="og:image" content="@yield('og_image', asset('images/og-default.jpg'))">
 
     {{-- Favicon --}}
-    <link rel="icon" type="image/png" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" type="image/png" href="{{ asset('logo.png') }}">
 
     {{-- Styles --}}
     @vite(['resources/css/app.css'])
