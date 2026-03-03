@@ -147,7 +147,7 @@
                                                         </button>
                                                     </form>
                                                 @endif
-                                                @can('manage users')
+                                                {{-- @can('manage users')
                                                     @if(auth()->user()->hasRole('admin') && $user->id !== auth()->id())
                                                         <form action="{{ route('admin.users.impersonate', $user) }}" method="POST" class="inline">
                                                             @csrf
@@ -156,7 +156,7 @@
                                                             </button>
                                                         </form>
                                                     @endif
-                                                @endcan
+                                                @endcan --}}
                                                 @if($user->id !== auth()->id())
                                                     <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="inline"
                                                           onsubmit="return confirm('Tem certeza que deseja excluir este usuário?');">

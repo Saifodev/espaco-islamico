@@ -30,6 +30,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'restore articles',
             'force delete articles',
             'impersonate users',
+            'manage newsletters',
+            'receive newsletter'
         ];
 
         foreach ($permissions as $permission) {

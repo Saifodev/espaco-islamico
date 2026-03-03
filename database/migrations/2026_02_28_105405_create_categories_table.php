@@ -12,6 +12,9 @@ return new class extends Migration
             $table->string('name');
             $table->string('slug')->unique();
             $table->text('description')->nullable();
+            $table->string('belongs_to')->nullable(); // Para categorizar por tipo de conteúdo (article, video, etc.)
+            $table->string('icon')->nullable();
+
             $table->string('color')->nullable();
             $table->foreignId('parent_id')->nullable()->constrained('categories');
             $table->integer('order')->default(0);

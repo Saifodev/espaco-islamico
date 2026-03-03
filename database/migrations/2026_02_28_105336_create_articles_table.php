@@ -9,10 +9,13 @@ return new class extends Migration
     {
         Schema::create('articles', function (Blueprint $table) {
             $table->id();
+            $table->enum('type', ['article', 'video', 'newspaper'])->default('article');
             $table->string('title');
             $table->string('slug')->unique();
             $table->text('excerpt')->nullable();
             $table->longText('content');
+            $table->string('youtube_url')->nullable(); // Para vídeos, se necessário
+            $table->string('edition')->nullable(); // Para edições de jornais, se necessário
             $table->string('status')->default('draft');
             $table->timestamp('published_at')->nullable();
             $table->foreignId('author_id')->constrained('users');

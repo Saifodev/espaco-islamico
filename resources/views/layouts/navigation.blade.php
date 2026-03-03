@@ -23,15 +23,21 @@
                         </x-nav-link>
                     @endcan
 
-                    {{-- @can('manage roles')
-                        <x-nav-link :href="route('admin.roles.index')" :active="request()->routeIs('admin.roles.*')">
-                            {{ __('Perfis') }}
+                    @can('view articles')
+                        <x-nav-link :href="route('admin.articles.index')" :active="request()->routeIs('admin.articles.*')">
+                            {{ __('Artigos') }}
                         </x-nav-link>
                     @endcan
 
-                    @can('create articles')
-                        <x-nav-link :href="route('admin.articles.index')" :active="request()->routeIs('admin.articles.*')">
-                            {{ __('Artigos') }}
+                    @can('manage newsletters')
+                        <x-nav-link :href="route('admin.newsletters.index')" :active="request()->routeIs('admin.newsletters.*')">
+                            {{ __('Newsletters') }}
+                        </x-nav-link>
+                    @endcan
+
+                    {{-- @can('manage roles')
+                        <x-nav-link :href="route('admin.roles.index')" :active="request()->routeIs('admin.roles.*')">
+                            {{ __('Perfis') }}
                         </x-nav-link>
                     @endcan
 
@@ -45,11 +51,12 @@
 
             <!-- Settings Dropdown -->
             <div class="hidden sm:flex sm:items-center sm:ms-6">
-                @if(session()->has('impersonate'))
+                @if (session()->has('impersonate'))
                     <div class="mr-4">
                         <form action="{{ route('admin.users.leave-impersonate') }}" method="POST" class="inline">
                             @csrf
-                            <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-bold py-1 px-3 rounded-full">
+                            <button type="submit"
+                                class="bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-bold py-1 px-3 rounded-full">
                                 <i class="fas fa-mask mr-1"></i>Sair do modo impersonate
                             </button>
                         </form>
@@ -58,10 +65,12 @@
 
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
-                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
+                        <button
+                            class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
                             <div class="flex items-center">
-                                @if(session()->has('impersonate'))
-                                    <span class="bg-yellow-100 text-yellow-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded">
+                                @if (session()->has('impersonate'))
+                                    <span
+                                        class="bg-yellow-100 text-yellow-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded">
                                         Impersonating
                                     </span>
                                 @endif
@@ -69,8 +78,11 @@
                             </div>
 
                             <div class="ms-1">
-                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                        clip-rule="evenodd" />
                                 </svg>
                             </div>
                         </button>
@@ -86,8 +98,9 @@
                                 {{ Auth::user()->email }}
                             </p>
                             <div class="mt-1 flex flex-wrap gap-1">
-                                @foreach(Auth::user()->roles as $role)
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                @foreach (Auth::user()->roles as $role)
+                                    <span
+                                        class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
                                         {{ ucfirst($role->name) }}
                                     </span>
                                 @endforeach
@@ -108,7 +121,7 @@
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <x-dropdown-link :href="route('logout')"
-                                    onclick="event.preventDefault();
+                                onclick="event.preventDefault();
                                                 this.closest('form').submit();">
                                 <i class="fas fa-sign-out-alt mr-2"></i>{{ __('Log Out') }}
                             </x-dropdown-link>
@@ -119,10 +132,14 @@
 
             <!-- Hamburger -->
             <div class="-me-2 flex items-center sm:hidden">
-                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
+                <button @click="open = ! open"
+                    class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
                     <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                        <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                        <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        <path :class="{ 'hidden': open, 'inline-flex': !open }" class="inline-flex"
+                            stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16M4 18h16" />
+                        <path :class="{ 'hidden': !open, 'inline-flex': open }" class="hidden" stroke-linecap="round"
+                            stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
@@ -130,7 +147,7 @@
     </div>
 
     <!-- Responsive Navigation Menu -->
-    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
+    <div :class="{ 'block': open, 'hidden': !open }" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
             <x-responsive-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
                 <i class="fas fa-tachometer-alt mr-2"></i>{{ __('Dashboard') }}
@@ -139,6 +156,18 @@
             @can('manage users')
                 <x-responsive-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
                     <i class="fas fa-users mr-2"></i>{{ __('Usuários') }}
+                </x-responsive-nav-link>
+            @endcan
+
+            @can('view articles')
+                <x-responsive-nav-link :href="route('admin.articles.index')" :active="request()->routeIs('admin.articles.*')">
+                    <i class="fas fa-newspaper mr-2"></i>{{ __('Artigos') }}
+                </x-responsive-nav-link>
+            @endcan
+
+            @can('manage newsletters')
+                <x-responsive-nav-link :href="route('admin.newsletters.index')" :active="request()->routeIs('admin.newsletters.*')">
+                    <i class="fas fa-envelope mr-2"></i>{{ __('Newsletters') }}
                 </x-responsive-nav-link>
             @endcan
 
@@ -167,19 +196,21 @@
                 <div class="font-medium text-base text-gray-800">{{ Auth::user()->name }}</div>
                 <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
                 <div class="mt-2 flex flex-wrap gap-1">
-                    @foreach(Auth::user()->roles as $role)
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                    @foreach (Auth::user()->roles as $role)
+                        <span
+                            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
                             {{ ucfirst($role->name) }}
                         </span>
                     @endforeach
                 </div>
             </div>
 
-            @if(session()->has('impersonate'))
+            @if (session()->has('impersonate'))
                 <div class="mt-3 px-4">
                     <form action="{{ route('admin.users.leave-impersonate') }}" method="POST">
                         @csrf
-                        <button type="submit" class="w-full text-left bg-yellow-100 hover:bg-yellow-200 text-yellow-800 text-sm font-medium py-2 px-3 rounded-md">
+                        <button type="submit"
+                            class="w-full text-left bg-yellow-100 hover:bg-yellow-200 text-yellow-800 text-sm font-medium py-2 px-3 rounded-md">
                             <i class="fas fa-mask mr-2"></i>Sair do modo impersonate
                         </button>
                     </form>
@@ -201,7 +232,7 @@
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <x-responsive-nav-link :href="route('logout')"
-                            onclick="event.preventDefault();
+                        onclick="event.preventDefault();
                                         this.closest('form').submit();">
                         <i class="fas fa-sign-out-alt mr-2"></i>{{ __('Log Out') }}
                     </x-responsive-nav-link>

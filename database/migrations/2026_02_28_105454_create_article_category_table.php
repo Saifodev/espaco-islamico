@@ -11,6 +11,7 @@ return new class extends Migration
             $table->foreignId('article_id')->constrained()->onDelete('cascade');
             $table->foreignId('category_id')->constrained()->onDelete('cascade');
             $table->primary(['article_id', 'category_id']);
+            $table->timestamps();
         });
     }
 
