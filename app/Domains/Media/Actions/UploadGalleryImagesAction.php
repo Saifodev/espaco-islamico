@@ -30,7 +30,8 @@ class UploadGalleryImagesAction
                     customProperties: [
                         'uploaded_by' => Auth::id(),
                         'uploaded_at' => now()->toIso8601String(),
-                    ]
+                    ],
+                    preserveOriginal: true // Adicionar este parâmetro se o MediaService suportar
                 );
                 
                 $uploadedMedia[] = $media;

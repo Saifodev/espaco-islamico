@@ -1,5 +1,4 @@
 <?php
-// app/Domains/Media/Actions/UploadPdfAction.php
 
 namespace App\Domains\Media\Actions;
 
@@ -15,9 +14,11 @@ class UploadPdfAction
             $article->clearMediaCollection('pdf');
         }
 
-        // Adicionar novo PDF
+        // Adicionar novo PDF sem manipulações
         $article->addMedia($file)
             ->usingFileName($file->getClientOriginalName())
+            ->withManipulations([]) // Desativa qualquer manipulação
+            ->preservingOriginal() // Preserva o arquivo original
             ->toMediaCollection('pdf');
     }
 }

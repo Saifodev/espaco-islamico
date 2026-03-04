@@ -1,5 +1,4 @@
 <?php
-// app/Domains/Media/Actions/DownloadYouTubeThumbnailAction.php
 
 namespace App\Domains\Media\Actions;
 
@@ -24,8 +23,11 @@ class DownloadYouTubeThumbnailAction
                 $tempPath = tempnam(sys_get_temp_dir(), 'yt_') . '.jpg';
                 file_put_contents($tempPath, $response->body());
                 
+                // Usar withManipulations([]) para evitar qualquer processamento
                 $article->addMedia($tempPath)
                     ->usingFileName("youtube_{$article->youtube_id}.jpg")
+                    ->withManipulations([]) // Desativa manipulações
+                    ->preservingOriginal() // Preserva o original sem processar
                     ->toMediaCollection('featured_image');
                 
                 unlink($tempPath);

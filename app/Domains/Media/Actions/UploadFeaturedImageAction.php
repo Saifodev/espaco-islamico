@@ -27,6 +27,10 @@ class UploadFeaturedImageAction
             ]);
         }
 
+        // Remover imagens anteriores da coleção antes de adicionar nova
+        // para garantir que não haja conversões pendentes
+        $article->clearMediaCollection(MediaCollectionType::FEATURED_IMAGE->value);
+
         $this->mediaService->upload(
             model: $article,
             file: $file,
@@ -35,7 +39,8 @@ class UploadFeaturedImageAction
                 'uploaded_by' => Auth::id(),
                 'uploaded_at' => now()->toIso8601String(),
                 'original_name' => $file->getClientOriginalName(),
-            ]
+            ],
+            preserveOriginal: true // Adicionar este parâmetro se o MediaService suportar
         );
     }
 }

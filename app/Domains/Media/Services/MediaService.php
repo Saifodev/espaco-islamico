@@ -22,21 +22,28 @@ class MediaService
         UploadedFile $file,
         MediaCollectionType $collection,
         ?string $customName = null,
-        array $customProperties = []
+        array $customProperties = [],
+        bool $preserveOriginal = true // Novo parâmetro
     ): Media {
         $this->validateUpload($file, $collection);
 
-        return DB::transaction(function () use ($model, $file, $collection, $customName, $customProperties) {
+        return DB::transaction(function () use ($model, $file, $collection, $customName, $customProperties, $preserveOriginal) {
             // Se for coleção singleFile, remove arquivo anterior
             if (!$collection->allowsMultiple()) {
                 $model->clearMediaCollection($collection->value);
             }
 
-            // Prepara o upload
+            // Prepara o upload com desativação de manipulações
             $mediaAdder = $model
                 ->addMedia($file)
                 ->usingName($customName ?? $this->generateFileName($file))
-                ->withCustomProperties($customProperties);
+                ->withCustomProperties($customProperties)
+                ->withManipulations([]); // Desativa todas as manipulações de imagem
+
+            // Preserva o original sem processamento
+            if ($preserveOriginal) {
+                $mediaAdder->preservingOriginal();
+            }
 
             // Adiciona à coleção
             $media = $mediaAdder->toMediaCollection($collection->value);
@@ -48,6 +55,7 @@ class MediaService
                 'collection' => $collection->value,
                 'file_name' => $media->file_name,
                 'size' => $media->size,
+                'preserve_original' => $preserveOriginal
             ]);
 
             return $media;
@@ -61,7 +69,8 @@ class MediaService
         HasMedia $model,
         array $files,
         MediaCollectionType $collection,
-        array $customProperties = []
+        array $customProperties = [],
+        bool $preserveOriginal = true // Novo parâmetro
     ): array {
         if (!$collection->allowsMultiple()) {
             throw new Exception("Coleção {$collection->value} não permite múltiplos arquivos");
@@ -71,7 +80,14 @@ class MediaService
 
         foreach ($files as $file) {
             if ($file instanceof UploadedFile) {
-                $uploadedMedia[] = $this->upload($model, $file, $collection, null, $customProperties);
+                $uploadedMedia[] = $this->upload(
+                    $model, 
+                    $file, 
+                    $collection, 
+                    null, 
+                    $customProperties,
+                    $preserveOriginal
+                );
             }
         }
 
@@ -85,13 +101,14 @@ class MediaService
         HasMedia $model,
         UploadedFile $newFile,
         MediaCollectionType $collection,
-        ?int $oldMediaId = null
+        ?int $oldMediaId = null,
+        bool $preserveOriginal = true // Novo parâmetro
     ): Media {
         if ($collection->allowsMultiple()) {
             throw new Exception("Use uploadMultiple para coleções que permitem múltiplos arquivos");
         }
 
-        return DB::transaction(function () use ($model, $newFile, $collection, $oldMediaId) {
+        return DB::transaction(function () use ($model, $newFile, $collection, $oldMediaId, $preserveOriginal) {
             // Remove mídia específica ou toda coleção
             if ($oldMediaId) {
                 $oldMedia = Media::find($oldMediaId);
@@ -102,8 +119,8 @@ class MediaService
                 $model->clearMediaCollection($collection->value);
             }
 
-            // Faz novo upload
-            return $this->upload($model, $newFile, $collection);
+            // Faz novo upload com preservação do original
+            return $this->upload($model, $newFile, $collection, null, [], $preserveOriginal);
         });
     }
 

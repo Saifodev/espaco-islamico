@@ -24,39 +24,44 @@ trait HasMediaCollections
 
     public function registerMediaConversions(?Media $media = null): void
     {
-        $this->addMediaConversion('thumb')
-            ->width(400)
-            ->height(300)
-            ->format('webp')
-            ->quality(80)
-            ->nonQueued();
-
-        $this->addMediaConversion('preview')
-            ->width(1200)
-            ->height(630)
-            ->format('webp')
-            ->quality(85)
-            ->nonQueued();
-
-        $this->addMediaConversion('large')
-            ->width(1920)
-            ->height(1080)
-            ->format('webp')
-            ->quality(90)
-            ->queued();
+        // Opção 1: Remover todas as conversões
+        // Simplesmente não registrar nenhuma conversão
+        // Isso fará com que apenas os arquivos originais sejam usados
+        
+        // Opção 2: Se quiser manter a possibilidade de conversões apenas com GD
+        // Você pode tentar configurar o driver para GD, mas ainda assim algumas 
+        // funcionalidades podem tentar usar proc_open
+        if (config('media-library.image_driver') === 'gd') {
+            $this->addMediaConversion('thumb')
+                ->nonOptimized() // Remove otimizações externas
+                ->nonQueued();
+                
+            $this->addMediaConversion('preview')
+                ->nonOptimized()
+                ->nonQueued();
+                
+            $this->addMediaConversion('large')
+                ->nonOptimized()
+                ->queued();
+        }
     }
 
     public function getFeaturedImageUrl(?string $conversion = 'preview'): ?string
     {
         $media = $this->getFirstMedia(MediaCollectionType::FEATURED_IMAGE->value);
-
-        return $media?->getUrl($conversion);
+        
+        if (!$media) {
+            return null;
+        }
+        
+        // Se as conversões foram removidas, sempre retorna a URL original
+        return $media->getUrl();
     }
 
     public function getGalleryUrls(?string $conversion = 'thumb'): array
     {
         return $this->getMedia(MediaCollectionType::GALLERY->value)
-            ->map(fn (Media $media) => $media->getUrl($conversion))
+            ->map(fn (Media $media) => $media->getUrl()) // Sempre retorna URL original
             ->toArray();
     }
 
