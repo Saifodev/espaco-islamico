@@ -5,29 +5,24 @@ namespace App\Domains\Content\Http\Livewire\Admin;
 
 use Livewire\Component;
 use Livewire\WithFileUploads;
-use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use App\Domains\Content\Models\Article;
 use App\Domains\Content\Models\Category;
-use App\Domains\Content\Models\Tag;
 use App\Domains\Content\Enums\ContentStatus;
 use App\Domains\Content\Enums\ContentType;
-use App\Domains\Content\Services\ArticleService;
-use App\Domains\Media\Actions\UploadFeaturedImageAction;
-use App\Domains\Media\Actions\UploadGalleryImagesAction;
-use App\Domains\Media\Actions\UploadPdfAction;
-use App\Domains\Media\Actions\RemoveMediaAction;
-use App\Domains\Media\Enums\MediaCollectionType;
 use App\Domains\Media\Services\MediaService;
-use Illuminate\Support\Facades\App;
+use App\Domains\Media\Enums\MediaCollectionType;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class ArticleForm extends Component
 {
     use WithFileUploads;
 
     public ?Article $article = null;
-
-    // Campos do formulário
+    
+    // Dados do formulário
     public string $type = 'article';
     public string $title = '';
     public string $slug = '';
@@ -37,64 +32,64 @@ class ArticleForm extends Component
     public ?string $edition = null;
     public string $status = 'draft';
     public ?string $published_at = null;
-    public ?string $seo_title = null;
-    public ?string $seo_description = null;
-    public ?string $seo_keywords = null;
-    public ?int $reading_time = null;
     public array $selectedCategories = [];
-    public array $selectedTags = [];
+    
+    // Upload de imagem simplificado
+    public $featured_image_temp = null; // Arquivo temporário do Livewire
+    public ?string $featured_image_url = null; // URL da imagem atual/preview
+    public ?int $featured_image_id = null; // ID da mídia atual para referência
+    
+    // Controle de UI
+    public bool $isEditing = false;
+    public bool $showPreview = false;
+    public bool $removeCurrentImage = false;
 
-    // Uploads de mídia
-    public $featured_image;
-    public array $gallery_images = [];
-    public $pdf;
+    protected MediaService $mediaService;
 
-    // Preview de mídia existente
-    public ?array $current_featured_image = null;
-    public array $current_gallery = [];
-    public ?array $current_pdf = null;
+    public function boot(MediaService $mediaService)
+    {
+        $this->mediaService = $mediaService;
+    }
 
-    // UI State
-    public bool $showSeo = false;
-    public bool $showAdvanced = false;
-    public ?string $confirmingTypeChange = null;
-    public array $validationErrors = [];
+    protected function rules()
+    {
+        $rules = [
+            'type' => 'required|in:article,video,newspaper',
+            'title' => 'required|min:3|max:255',
+            'slug' => 'required|max:255|unique:articles,slug,' . ($this->article?->id ?? 'NULL'),
+            'excerpt' => 'nullable|max:500',
+            'status' => 'required|in:draft,published,scheduled',
+            'selectedCategories' => 'array',
+        ];
 
-    protected $listeners = [
-        'contentUpdated' => 'updateContent',
-        'refreshMedia' => '$refresh',
+        // Regras específicas por tipo
+        if ($this->type === 'article') {
+            $rules['content'] = 'required|min:10';
+        } elseif ($this->type === 'video') {
+            $rules['youtube_url'] = 'required|url|regex:/^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+$/';
+        } elseif ($this->type === 'newspaper') {
+            $rules['edition'] = 'required|max:100';
+        }
+
+        // Regra para imagem - apenas valida se um novo arquivo foi enviado
+        if ($this->featured_image_temp) {
+            $rules['featured_image_temp'] = 'image|max:5120'; // 5MB max
+        }
+
+        return $rules;
+    }
+
+    protected $messages = [
+        'featured_image_temp.image' => 'O arquivo deve ser uma imagem válida (JPG, PNG, WebP)',
+        'featured_image_temp.max' => 'A imagem não pode ter mais que 5MB',
+        'youtube_url.regex' => 'Por favor, insira uma URL válida do YouTube',
+        'edition.required' => 'O número da edição é obrigatório para jornais',
     ];
-
-    public function rules(): array
-    {
-        // As regras são dinâmicas baseadas no tipo e status
-        $type = ContentType::tryFrom($this->type) ?? ContentType::ARTICLE;
-        $isPublishing = $this->status === ContentStatus::PUBLISHED->value;
-
-        return $type->validationRules($isPublishing);
-    }
-
-    public function messages(): array
-    {
-        $type = ContentType::tryFrom($this->type) ?? ContentType::ARTICLE;
-
-        return match ($type) {
-            ContentType::VIDEO => [
-                'youtube_url.required' => 'A URL do YouTube é obrigatória para vídeos',
-                'youtube_url.regex' => 'Por favor, insira uma URL válida do YouTube',
-            ],
-            ContentType::NEWSPAPER => [
-                'edition.required' => 'O número da edição é obrigatório para jornais',
-            ],
-            default => [
-                'content.required' => 'O conteúdo é obrigatório para artigos',
-            ],
-        };
-    }
 
     public function mount(?Article $article = null): void
     {
         $this->article = $article;
+        $this->isEditing = $article !== null;
 
         if ($article) {
             $this->type = $article->type->value;
@@ -106,360 +101,68 @@ class ArticleForm extends Component
             $this->edition = $article->edition;
             $this->status = $article->status->value;
             $this->published_at = $article->published_at?->format('Y-m-d\TH:i');
-            $this->seo_title = $article->seo_title;
-            $this->seo_description = $article->seo_description;
-            $this->seo_keywords = $article->seo_keywords;
-            $this->reading_time = $article->reading_time;
             $this->selectedCategories = $article->categories->pluck('id')->toArray();
-            $this->selectedTags = $article->tags->pluck('id')->toArray();
-
-            $this->loadExistingMedia();
+            
+            // Carregar imagem atual da Media Library
+            if ($article->hasFeaturedImage()) {
+                $media = $article->getFirstMedia(MediaCollectionType::FEATURED_IMAGE->value);
+                $this->featured_image_url = $article->getFeaturedImageUrl('preview');
+                $this->featured_image_id = $media?->id;
+            }
         } else {
-            // Carregar mídia temporária da sessão se existir
-            $this->loadTempMedia();
+            $this->published_at = now()->format('Y-m-d\TH:i');
         }
-    }
-
-    protected function loadExistingMedia(): void
-    {
-        // if (!$this->article) return;
-
-        // // Imagem de destaque
-        // $featuredImage = $this->article->getFirstMedia(MediaCollectionType::FEATURED_IMAGE->value);
-        // if ($featuredImage) {
-        //     $this->current_featured_image = [
-        //         'id' => $featuredImage->id,
-        //         'url' => $featuredImage->getUrl('thumb'),
-        //         'original_url' => $featuredImage->getUrl(),
-        //         'name' => $featuredImage->name,
-        //     ];
-        // }
-
-        // // Galeria
-        // $this->current_gallery = $this->article->getMedia(MediaCollectionType::GALLERY->value)
-        //     ->map(fn($media) => [
-        //         'id' => $media->id,
-        //         'url' => $media->getUrl('thumb'),
-        //         'original_url' => $media->getUrl('preview'),
-        //         'name' => $media->name,
-        //     ])
-        //     ->toArray();
-
-        // // PDF (para jornais)
-        // $pdf = $this->article->getFirstMedia('pdf');
-        // if ($pdf) {
-        //     $this->current_pdf = [
-        //         'id' => $pdf->id,
-        //         'name' => $pdf->name,
-        //         'file_name' => $pdf->file_name,
-        //         'size' => $this->formatBytes($pdf->size),
-        //         'url' => $pdf->getUrl(),
-        //     ];
-        // }
-    }
-
-    protected function loadTempMedia(): void
-    {
-        if (session()->has('temp_featured_image')) {
-            // Não podemos mostrar preview de temp, apenas indicar que há
-            $this->dispatch('notify', [
-                'message' => 'Há uma imagem temporária aguardando salvamento',
-                'type' => 'info'
-            ]);
-        }
-    }
-
-    public function updatedType($oldType, $newType): void
-    {
-        if ($this->article && $this->hasData()) {
-            $this->confirmingTypeChange = $newType;
-            $this->type = $oldType; // Reverter temporariamente
-            return;
-        }
-
-        $this->resetTypeSpecificFields($newType);
-    }
-
-    public function changeType(string $newType): void
-    {
-        $oldType = $this->type;
-
-        if ($this->article && $this->hasData()) {
-            $this->confirmingTypeChange = $newType;
-            return;
-        }
-
-        $this->type = $newType;
-        $this->resetTypeSpecificFields($newType);
-    }
-
-    protected function resetTypeSpecificFields(string $newType): void
-    {
-        $type = ContentType::tryFrom($newType) ?? ContentType::ARTICLE;
-        $visibleFields = $type->visibleFields();
-
-        if (!$visibleFields['youtube_url']) {
-            $this->youtube_url = null;
-        }
-
-        if (!$visibleFields['edition']) {
-            $this->edition = null;
-        }
-
-        if (!$visibleFields['gallery']) {
-            $this->gallery_images = [];
-            $this->current_gallery = [];
-        }
-
-        if ($type !== ContentType::ARTICLE && $this->content) {
-            // Manter como descrição, não limpar
-        }
-
-        $this->dispatch('type-changed', $newType);
-    }
-
-    protected function hasData(): bool
-    {
-        return !empty($this->title) ||
-            !empty($this->content) ||
-            !empty($this->youtube_url) ||
-            !empty($this->edition) ||
-            $this->current_featured_image ||
-            !empty($this->current_gallery) ||
-            $this->current_pdf;
-    }
-
-    public function confirmTypeChange(): void
-    {
-        $newType = $this->confirmingTypeChange;
-        $this->type = $newType;
-        $this->resetTypeSpecificFields($newType);
-        $this->confirmingTypeChange = null;
-
-        $this->dispatch('notify', [
-            'message' => 'Tipo alterado com sucesso. Verifique os campos específicos.',
-            'type' => 'success'
-        ]);
-    }
-
-    public function cancelTypeChange(): void
-    {
-        $this->confirmingTypeChange = null;
     }
 
     public function updatedTitle(): void
     {
-        if (empty($this->slug) || $this->slug === str($this->title)->slug()) {
+        if (!$this->isEditing || empty($this->slug) || $this->slug === Str::slug($this->title)) {
             $this->generateSlug();
         }
     }
 
     public function generateSlug(): void
     {
-        $this->slug = str($this->title)->slug();
+        $this->slug = Str::slug($this->title);
     }
 
-    public function updatedYoutubeUrl(): void
+    public function updatedFeaturedImageTemp()
     {
-        // Se não tem imagem de destaque, sugerir usar thumbnail do YouTube
-        if (!$this->current_featured_image && $this->youtube_url) {
-            $this->dispatch('confirm-use-youtube-thumbnail');
+        $this->validateOnly('featured_image_temp');
+        
+        // Criar preview temporário do Livewire
+        if ($this->featured_image_temp) {
+            $this->featured_image_url = $this->featured_image_temp->temporaryUrl();
+            $this->removeCurrentImage = false; // Reset flag de remoção
         }
     }
 
-    public function useYouTubeThumbnail(): void
+    public function removeFeaturedImage()
     {
-        $article = $this->article;
-        if (!$article || !$article->youtube_thumbnail) {
-            return;
-        }
-
-        // Aqui você implementaria a lógica para baixar e salvar a thumbnail
-        $this->dispatch('notify', [
-            'message' => 'Thumbnail do YouTube será baixada ao salvar',
-            'type' => 'info'
-        ]);
-
-        session()->put('use_youtube_thumbnail', true);
-    }
-
-    public function uploadFeaturedImage(): void
-    {
-        $this->validateOnly('featured_image');
-
-        try {
-            if (!$this->article) {
-                // session()->put('temp_featured_image', $this->featured_image);
-                $this->dispatch('notify', [
-                    'message' => 'Imagem carregada temporariamente. Salve o artigo para finalizar.',
-                    'type' => 'info'
-                ]);
-                $this->featured_image = null;
-                return;
-            }
-
-            $action = app(UploadFeaturedImageAction::class);
-            $action->execute($this->article, $this->featured_image);
-
-            $this->featured_image = null;
-            $this->loadExistingMedia();
-
-            $this->dispatch('notify', [
-                'message' => 'Imagem de destaque atualizada com sucesso!',
-                'type' => 'success'
-            ]);
-        } catch (\Exception $e) {
-            $this->dispatch('notify', [
-                'message' => 'Erro ao fazer upload: ' . $e->getMessage(),
-                'type' => 'error'
-            ]);
+        $this->featured_image_temp = null;
+        
+        if ($this->isEditing && $this->article?->hasFeaturedImage()) {
+            // Marcar para remoção no save
+            $this->removeCurrentImage = true;
+            $this->featured_image_url = null;
+            $this->featured_image_id = null;
+        } else {
+            $this->featured_image_url = null;
+            $this->featured_image_id = null;
         }
     }
 
-    public function uploadGalleryImages(): void
+    public function updatedType($value)
     {
-        $this->validateOnly('gallery_images');
-
-        try {
-            if (empty($this->gallery_images)) return;
-
-            if (!$this->article) {
-                // session()->put('temp_gallery_images', $this->gallery_images);
-                $this->dispatch('notify', [
-                    'message' => 'Imagens carregadas temporariamente. Salve o artigo para finalizar.',
-                    'type' => 'info'
-                ]);
-                $this->gallery_images = [];
-                return;
-            }
-
-            $action = app(UploadGalleryImagesAction::class);
-            $action->execute($this->article, $this->gallery_images);
-
-            $this->gallery_images = [];
-            $this->loadExistingMedia();
-
-            $this->dispatch('notify', [
-                'message' => 'Imagens adicionadas à galeria!',
-                'type' => 'success'
-            ]);
-        } catch (\Exception $e) {
-            $this->dispatch('notify', [
-                'message' => 'Erro ao fazer upload: ' . $e->getMessage(),
-                'type' => 'error'
-            ]);
+        // Limpar campos específicos ao mudar o tipo
+        if ($value !== 'video') {
+            $this->youtube_url = null;
         }
-    }
-
-    public function uploadPdf(): void
-    {
-        $this->validateOnly('pdf');
-
-        try {
-            if (!$this->article) {
-                // session()->put('temp_pdf', $this->pdf);
-                $this->dispatch('notify', [
-                    'message' => 'PDF carregado temporariamente. Salve o artigo para finalizar.',
-                    'type' => 'info'
-                ]);
-                $this->pdf = null;
-                return;
-            }
-
-            $action = app(UploadPdfAction::class);
-            $action->execute($this->article, $this->pdf);
-
-            $this->pdf = null;
-            $this->loadExistingMedia();
-
-            $this->dispatch('notify', [
-                'message' => 'PDF atualizado com sucesso!',
-                'type' => 'success'
-            ]);
-        } catch (\Exception $e) {
-            $this->dispatch('notify', [
-                'message' => 'Erro ao fazer upload: ' . $e->getMessage(),
-                'type' => 'error'
-            ]);
+        if ($value !== 'newspaper') {
+            $this->edition = null;
         }
-    }
-
-    public function removeFeaturedImage(): void
-    {
-        try {
-            if (!$this->article?->hasFeaturedImage()) return;
-
-            $mediaId = $this->article->getFirstMedia(MediaCollectionType::FEATURED_IMAGE->value)->id;
-
-            $action = app(RemoveMediaAction::class);
-            $action->execute($this->article, $mediaId);
-
-            $this->current_featured_image = null;
-
-            $this->dispatch('notify', [
-                'message' => 'Imagem de destaque removida!',
-                'type' => 'success'
-            ]);
-        } catch (\Exception $e) {
-            $this->dispatch('notify', [
-                'message' => 'Erro ao remover imagem: ' . $e->getMessage(),
-                'type' => 'error'
-            ]);
-        }
-    }
-
-    public function removeGalleryImage(int $mediaId): void
-    {
-        try {
-            $action = app(RemoveMediaAction::class);
-            $action->execute($this->article, $mediaId);
-
-            $this->loadExistingMedia();
-
-            $this->dispatch('notify', [
-                'message' => 'Imagem removida da galeria!',
-                'type' => 'success'
-            ]);
-        } catch (\Exception $e) {
-            $this->dispatch('notify', [
-                'message' => 'Erro ao remover imagem: ' . $e->getMessage(),
-                'type' => 'error'
-            ]);
-        }
-    }
-
-    public function removePdf(): void
-    {
-        try {
-            if (!$this->article?->hasMedia('pdf')) return;
-
-            $mediaId = $this->article->getFirstMedia('pdf')->id;
-
-            $action = app(RemoveMediaAction::class);
-            $action->execute($this->article, $mediaId);
-
-            $this->current_pdf = null;
-
-            $this->dispatch('notify', [
-                'message' => 'PDF removido!',
-                'type' => 'success'
-            ]);
-        } catch (\Exception $e) {
-            $this->dispatch('notify', [
-                'message' => 'Erro ao remover PDF: ' . $e->getMessage(),
-                'type' => 'error'
-            ]);
-        }
-    }
-
-    public function updateContent(string $content): void
-    {
-        $this->content = $content;
-
-        // Atualizar tempo de leitura se for artigo
-        if ($this->type === ContentType::ARTICLE->value) {
-            $wordCount = str_word_count(strip_tags($content));
-            $this->reading_time = max(1, ceil($wordCount / 200));
+        if ($value !== 'article') {
+            $this->content = null;
         }
     }
 
@@ -467,212 +170,131 @@ class ArticleForm extends Component
     {
         $this->validate();
 
-        // Verificar se pode publicar
-        if ($this->status === ContentStatus::PUBLISHED->value) {
-            $type = ContentType::tryFrom($this->type) ?? ContentType::ARTICLE;
-
-            if ($this->article) {
-                $errors = $this->article->getPublishErrors();
-            } else {
-                $errors = $this->validatePublishingRequirements($type);
-            }
-
-            if (!empty($errors)) {
-                foreach ($errors as $error) {
-                    $this->addError('publish', $error);
-                }
-                return;
-            }
-        }
-
+        // Preparar dados
         $data = [
             'type' => $this->type,
             'title' => $this->title,
             'slug' => $this->slug,
             'excerpt' => $this->excerpt,
-            'content' => $this->content,
-            'youtube_url' => $this->youtube_url,
-            'edition' => $this->edition,
+            'content' => $this->type === 'article' ? $this->content : null,
+            'youtube_url' => $this->type === 'video' ? $this->youtube_url : null,
+            'edition' => $this->type === 'newspaper' ? $this->edition : null,
             'status' => $this->status,
-            'published_at' => $this->published_at,
-            'seo_title' => $this->seo_title,
-            'seo_description' => $this->seo_description,
-            'seo_keywords' => $this->seo_keywords,
-            'reading_time' => $this->reading_time,
-            'categories' => $this->selectedCategories,
-            'tags' => $this->selectedTags,
+            'published_at' => $this->status === 'scheduled' ? $this->published_at : now(),
+            'author_id' => Auth::id(),
         ];
 
-        $service = App::make(ArticleService::class);
-
         try {
-            if ($this->article) {
-                $this->article = $service->update($this->article, $data);
-                // $this->processTempMedia();
-                $message = 'Artigo atualizado com sucesso!';
-            } else {
-                $this->article = $service->create($data, Auth::user());
-                // $this->processTempMedia();
-                $message = 'Artigo criado com sucesso!';
-            }
+            DB::transaction(function () use ($data) {
+                if ($this->isEditing) {
+                    // Atualizar artigo
+                    $this->article->update($data);
+                    
+                    // Gerenciar imagem de destaque
+                    $this->handleFeaturedImage($this->article);
+                    
+                } else {
+                    // Criar artigo
+                    $this->article = Article::create($data);
+                    
+                    // Gerenciar imagem de destaque
+                    $this->handleFeaturedImage($this->article);
+                }
+                
+                // Sincronizar categorias
+                $this->article->categories()->sync($this->selectedCategories);
+            });
 
-            if ($this->featured_image) {
-                app(UploadFeaturedImageAction::class)
-                    ->execute($this->article, $this->featured_image);
-            }
+            session()->flash('success', $this->isEditing ? 'Artigo atualizado com sucesso!' : 'Artigo criado com sucesso!');
+            
+            return $this->isEditing 
+                ? redirect()->route('admin.articles.index')
+                : redirect()->route('admin.articles.edit', $this->article);
 
-            if (!empty($this->gallery_images)) {
-                app(UploadGalleryImagesAction::class)
-                    ->execute($this->article, $this->gallery_images);
-            }
-
-            if ($this->pdf) {
-                app(UploadPdfAction::class)
-                    ->execute($this->article, $this->pdf);
-            }
-
-            // Processar YouTube thumbnail se necessário
-            if (session()->pull('use_youtube_thumbnail') && $this->article->youtube_thumbnail) {
-                $this->downloadYouTubeThumbnail();
-            }
-
-            session()->flash('success', $message);
-
-            return redirect()->route('admin.articles.edit', $this->article);
         } catch (\Exception $e) {
-            $this->dispatch('notify', [
-                'message' => 'Erro ao salvar: ' . $e->getMessage(),
-                'type' => 'error'
+            Log::error('Erro ao salvar artigo', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
+            
+            session()->flash('error', 'Erro ao salvar: ' . $e->getMessage());
         }
     }
 
-    protected function validatePublishingRequirements(ContentType $type): array
+    /**
+     * Gerenciar upload/remoção da imagem de destaque usando MediaService
+     */
+    protected function handleFeaturedImage(Article $article): void
     {
-        $errors = [];
-        $requirements = $type->mediaRequirements();
-
-        if (
-            $requirements['featured_image'] === 'required' &&
-            !$this->featured_image &&
-            !session()->has('temp_featured_image')
-        ) {
-            $errors[] = 'Imagem de destaque é obrigatória para publicação';
+        // Caso 1: Remover imagem existente (marcado para remoção)
+        if ($this->removeCurrentImage && $this->featured_image_id) {
+            $this->mediaService->remove($article, $this->featured_image_id);
+            $this->featured_image_id = null;
+            $this->featured_image_url = null;
+            $this->removeCurrentImage = false;
         }
 
-        if ($type === ContentType::NEWSPAPER) {
-            if (
-                $requirements['pdf'] === 'required' &&
-                !$this->pdf &&
-                !session()->has('temp_pdf')
-            ) {
-                $errors[] = 'Arquivo PDF da edição é obrigatório para publicação';
+        // Caso 2: Upload de nova imagem
+        if ($this->featured_image_temp) {
+            try {
+                // Se já tem imagem, substitui (media service lida com isso)
+                $media = $this->mediaService->upload(
+                    model: $article,
+                    file: $this->featured_image_temp,
+                    collection: MediaCollectionType::FEATURED_IMAGE,
+                    customName: "featured-{$article->slug}-" . now()->format('Y-m-d'),
+                    customProperties: [
+                        'uploaded_by' => Auth::id(),
+                        'uploaded_at' => now()->toDateTimeString(),
+                        'article_type' => $this->type,
+                    ]
+                );
+
+                // Atualizar referências
+                $this->featured_image_id = $media->id;
+                $this->featured_image_url = $media->getUrl('preview');
+                
+                // Limpar temp
+                $this->featured_image_temp = null;
+
+            } catch (\Exception $e) {
+                Log::error('Erro no upload da imagem', [
+                    'article_id' => $article->id,
+                    'error' => $e->getMessage()
+                ]);
+                
+                throw new \Exception('Falha ao fazer upload da imagem: ' . $e->getMessage());
             }
-            if (!$this->edition) {
-                $errors[] = 'Número da edição é obrigatório';
-            }
         }
-
-        if ($type === ContentType::VIDEO && !$this->youtube_url) {
-            $errors[] = 'URL do YouTube é obrigatória para vídeos';
-        }
-
-        if ($type === ContentType::ARTICLE && !$this->content) {
-            $errors[] = 'Conteúdo do artigo é obrigatório';
-        }
-
-        return $errors;
     }
 
-    protected function processTempMedia(): void
+    public function togglePreview()
     {
-        // if (!$this->article) return;
-
-        // // Imagem de destaque temporária
-        // if (session()->has('temp_featured_image')) {
-        //     $tempImage = session()->pull('temp_featured_image');
-        //     if ($tempImage instanceof TemporaryUploadedFile) {
-        //         $action = app(UploadFeaturedImageAction::class);
-        //         $action->execute($this->article, $tempImage);
-        //     }
-        // }
-
-        // // Galeria temporária
-        // if (session()->has('temp_gallery_images')) {
-        //     $tempImages = session()->pull('temp_gallery_images');
-        //     if (is_array($tempImages)) {
-        //         $action = app(UploadGalleryImagesAction::class);
-        //         $action->execute($this->article, $tempImages);
-        //     }
-        // }
-
-        // // PDF temporário
-        // if (session()->has('temp_pdf')) {
-        //     $tempPdf = session()->pull('temp_pdf');
-        //     if ($tempPdf instanceof TemporaryUploadedFile) {
-        //         $action = app(UploadPdfAction::class);
-        //         $action->execute($this->article, $tempPdf);
-        //     }
-        // }
-
-        $this->loadExistingMedia();
+        $this->showPreview = !$this->showPreview;
     }
 
-    protected function downloadYouTubeThumbnail(): void
+    /**
+     * Regras de validação em tempo real
+     */
+    public function updated($propertyName)
     {
-        // Implementar download da thumbnail do YouTube
-        // Usar job em background para não travar
-    }
-
-    protected function formatBytes(int $bytes, int $precision = 2): string
-    {
-        $units = ['B', 'KB', 'MB', 'GB'];
-        $bytes = max($bytes, 0);
-        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
-        $pow = min($pow, count($units) - 1);
-        $bytes /= pow(1024, $pow);
-        return round($bytes, $precision) . ' ' . $units[$pow];
-    }
-
-    public function getContentTypeProperty(): ContentType
-    {
-        return ContentType::tryFrom($this->type) ?? ContentType::ARTICLE;
-    }
-
-    public function getVisibleFieldsProperty(): array
-    {
-        return $this->content_type->visibleFields();
-    }
-
-    public function getPlaceholdersProperty(): array
-    {
-        return $this->content_type->placeholders();
+        $this->validateOnly($propertyName);
     }
 
     public function render()
     {
-        $categories = Category::ordered()->get();
-        $tags = Tag::orderBy('name')->get();
-        $contentTypes = collect(ContentType::cases())->map(fn($type) => [
-            'value' => $type->value,
-            'label' => $type->label(),
-            'icon' => $type->icon(),
-            'color' => $type->color(),
-        ]);
-        $statuses = collect(ContentStatus::cases())->map(fn($status) => [
-            'value' => $status->value,
-            'label' => $status->label(),
-            'color' => $status->color(),
-        ]);
-
         return view('livewire.admin.article-form', [
-            'categories' => $categories,
-            'tags' => $tags,
-            'contentTypes' => $contentTypes,
-            'statuses' => $statuses,
-            'contentType' => $this->content_type,
-            'visibleFields' => $this->visible_fields,
-            'placeholders' => $this->placeholders,
+            'categories' => Category::orderBy('name')->get(),
+            'contentTypes' => [
+                ['value' => 'article', 'label' => 'Artigo', 'icon' => 'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z'],
+                ['value' => 'video', 'label' => 'Vídeo', 'icon' => 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z'],
+                ['value' => 'newspaper', 'label' => 'Jornal', 'icon' => 'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9'],
+            ],
+            'statusOptions' => [
+                ['value' => 'draft', 'label' => 'Rascunho', 'color' => 'gray'],
+                ['value' => 'published', 'label' => 'Publicar', 'color' => 'green'],
+                ['value' => 'scheduled', 'label' => 'Agendar', 'color' => 'yellow'],
+            ],
         ]);
     }
 }

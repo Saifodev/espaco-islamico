@@ -41,12 +41,12 @@
 <body class="font-sans antialiased bg-white text-gray-900">
     <div class="min-h-screen flex flex-col">
         {{-- Top Bar --}}
-        <div class="bg-[#1a1a1a] text-white/80 text-xs py-2 px-4">
+        <div class="bg-[#5fa343] text-white/80 text-xs py-2 px-4">
             <div class="max-w-7xl mx-auto flex justify-between items-center">
                 <span>Um espaço dedicado ao mundo Islâmico — Moçambique & PALOP</span>
                 <div class="hidden sm:flex items-center gap-4">
                     <a href="https://www.facebook.com/profile.php?id=61570540160741" target="_blank"
-                        rel="noopener noreferrer" class="hover:text-[var(--brand-green)] transition-colors">
+                        rel="noopener noreferrer" class="hover:text-[var(--brand-green-dark)] transition-colors">
                         <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path fill-rule="evenodd"
                                 d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"
@@ -54,7 +54,7 @@
                         </svg>
                     </a>
                     <a href="mailto:contato@espacoislamico.co.mz"
-                        class="hover:text-[var(--brand-green)] transition-colors">
+                        class="hover:text-[var(--brand-green-dark)] transition-colors">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
@@ -68,12 +68,25 @@
         {{-- Main Header --}}
         <header class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
             <div class="max-w-7xl mx-auto px-4 sm:px-6">
-                <div class="flex items-center justify-between h-16 md:h-20">
-                    {{-- Logo --}}
+                @php
+                    $navLinks = [
+                        ['label' => 'Início', 'route' => 'home'],
+                        ['label' => 'Artigos', 'route' => 'articles.index', 'type' => 'article'],
+                        ['label' => 'Vídeos', 'route' => 'articles.type', 'type' => 'video'],
+                        ['label' => 'Jornais', 'route' => 'articles.type', 'type' => 'newspaper'],
+                        ['label' => 'Sobre Nós', 'route' => 'about'],
+                    ];
+                    $currentRoute = Route::currentRouteName();
+                    $currentType = request()->route('type');
+                @endphp
+
+                {{-- Desktop Layout (md and up) --}}
+                <div class="hidden md:flex items-center justify-between h-20">
+                    {{-- Logo (sempre visível no desktop) --}}
                     <a href="{{ route('home') }}" class="flex items-center gap-3 shrink-0">
                         <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/user_69a0952abe7cb8c0c94a27c4/13aba247d_logo.png"
-                            alt="Espaço Islâmico" class="h-10 md:h-12 w-auto">
-                        <div class="hidden sm:block">
+                            alt="Espaço Islâmico" class="h-12 w-auto">
+                        <div>
                             <h1 class="text-lg font-bold text-[#1a1a1a] leading-tight tracking-tight">Espaço Islâmico
                             </h1>
                             <p class="text-[10px] text-gray-500 uppercase tracking-widest">Jornal Digital</p>
@@ -81,19 +94,7 @@
                     </a>
 
                     {{-- Desktop Navigation --}}
-                    <nav class="hidden md:flex items-center gap-1">
-                        @php
-                            $navLinks = [
-                                ['label' => 'Início', 'route' => 'home'],
-                                ['label' => 'Artigos', 'route' => 'articles.index', 'type' => 'article'],
-                                ['label' => 'Vídeos', 'route' => 'articles.type', 'type' => 'video'],
-                                ['label' => 'Jornais', 'route' => 'articles.type', 'type' => 'newspaper'],
-                                ['label' => 'Sobre Nós', 'route' => 'about'],
-                            ];
-                            $currentRoute = Route::currentRouteName();
-                            $currentType = request()->route('type');
-                        @endphp
-
+                    <nav class="flex items-center gap-1">
                         @foreach ($navLinks as $link)
                             @php
                                 $isActive =
@@ -123,59 +124,42 @@
                             @endif
                         @endforeach
                     </nav>
-
-                    {{-- Mobile Menu Button --}}
-                    <button x-data x-on:click="$dispatch('toggle-mobile-menu')"
-                        class="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                        <svg x-show="!$store.mobileMenuOpen" class="w-5 h-5" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 6h16M4 12h16M4 18h16"></path>
-                        </svg>
-                        <svg x-show="$store.mobileMenuOpen" class="w-5 h-5" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24" style="display: none;">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
                 </div>
-            </div>
 
-            {{-- Mobile Navigation --}}
-            <div x-data="{ open: false }" x-show="open" x-cloak @toggle-mobile-menu.window="open = !open"
-                x-transition:enter="transition ease-out duration-200"
-                x-transition:enter-start="opacity-0 transform -translate-y-2"
-                x-transition:enter-end="opacity-100 transform translate-y-0"
-                x-transition:leave="transition ease-in duration-150"
-                x-transition:leave-start="opacity-100 transform translate-y-0"
-                x-transition:leave-end="opacity-0 transform -translate-y-2"
-                class="md:hidden bg-white border-t border-gray-100">
-                <nav class="px-4 py-4 space-y-1">
-                    @foreach ($navLinks as $link)
-                        @php
-                            $isActive =
-                                $link['route'] === 'home'
-                                    ? $currentRoute === 'home'
-                                    : ($link['route'] === 'articles.type'
-                                        ? $currentType === $link['type']
-                                        : $currentRoute === $link['route']);
-                        @endphp
+                {{-- Mobile Layout (below md) - Menu sempre visível, logo escondido --}}
+                <div class="md:hidden py-3">
+                    {{-- Mobile Navigation - Sempre visível --}}
+                    <nav class="flex items-center justify-between gap-1 overflow-x-auto pb-1 scrollbar-hide">
+                        @foreach ($navLinks as $link)
+                            @php
+                                $isActive =
+                                    $link['route'] === 'home'
+                                        ? $currentRoute === 'home'
+                                        : ($link['route'] === 'articles.type'
+                                            ? $currentType === $link['type']
+                                            : $currentRoute === $link['route']);
+                            @endphp
 
-                        @if ($link['route'] === 'articles.type')
-                            <a href="{{ route('articles.type', ['type' => $link['type']]) }}" @click="open = false"
-                                class="block px-4 py-3 rounded-lg text-sm font-medium transition-all
-                                      {{ $isActive ? 'text-[var(--brand-green)] bg-[var(--brand-green-light)]' : 'text-gray-700 hover:bg-gray-50' }}">
-                                {{ $link['label'] }}
-                            </a>
-                        @else
-                            <a href="{{ route($link['route']) }}" @click="open = false"
-                                class="block px-4 py-3 rounded-lg text-sm font-medium transition-all
-                                      {{ $isActive ? 'text-[var(--brand-green)] bg-[var(--brand-green-light)]' : 'text-gray-700 hover:bg-gray-50' }}">
-                                {{ $link['label'] }}
-                            </a>
-                        @endif
-                    @endforeach
-                </nav>
+                            @if ($link['route'] === 'articles.type')
+                                <a href="{{ route('articles.type', ['type' => $link['type']]) }}"
+                                    class="px-3 py-2 text-xs font-medium whitespace-nowrap rounded-lg transition-all duration-200
+                                          {{ $isActive
+                                              ? 'text-[var(--brand-green)] bg-[var(--brand-green-light)]'
+                                              : 'text-gray-700 hover:text-[var(--brand-green)] hover:bg-gray-50' }}">
+                                    {{ $link['label'] }}
+                                </a>
+                            @else
+                                <a href="{{ route($link['route']) }}"
+                                    class="px-3 py-2 text-xs font-medium whitespace-nowrap rounded-lg transition-all duration-200
+                                          {{ $isActive
+                                              ? 'text-[var(--brand-green)] bg-[var(--brand-green-light)]'
+                                              : 'text-gray-700 hover:text-[var(--brand-green)] hover:bg-gray-50' }}">
+                                    {{ $link['label'] }}
+                                </a>
+                            @endif
+                        @endforeach
+                    </nav>
+                </div>
             </div>
         </header>
 
@@ -272,17 +256,24 @@
         </footer>
     </div>
 
-    {{-- Alpine.js Store for mobile menu --}}
-    <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.store('mobileMenuOpen', false);
-        });
-    </script>
-
     {{-- Scripts --}}
     @vite(['resources/js/app.js'])
     @livewireScripts
     @stack('scripts')
+
+    {{-- Optional: Add custom scrollbar hiding for mobile menu --}}
+    <style>
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .scrollbar-hide {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+    </style>
 </body>
 
 </html>

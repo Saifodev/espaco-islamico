@@ -23,25 +23,30 @@
             <img src="{{ $item->getFirstMediaUrl('featured_image') ?? 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?w=1200&q=80' }}"
                 alt="{{ $item->title }}" class="w-full h-full object-cover opacity-60">
             <div class="absolute inset-0 bg-gradient-to-t from-[#1a1a1a] via-transparent to-transparent"></div>
-            <div class="absolute bottom-0 left-0 right-0 p-6 md:p-12">
-                <div class="max-w-4xl mx-auto">
-                    <div class="flex items-start justify-between mb-4">
-                        <a href="{{ route('articles.type', 'article') }}"
-                            class="inline-flex items-center gap-2 text-white/70 hover:text-white text-sm transition-colors">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                            </svg>
-                            Voltar
-                        </a>
+            
+            {{-- Header overlay --}}
+            <div class="absolute inset-0 flex flex-col justify-between p-6 md:p-12">
 
-                        @if ($item->category)
-                            <span class="bg-[#77c159] text-white text-xs font-semibold px-3 py-1 rounded-full">
-                                {{ $item->category }}
-                            </span>
-                        @endif
-                    </div>
+                {{-- Top bar --}}
+                <div class="flex items-center justify-between max-w-4xl mx-auto w-full">
+                    <a href="{{ route('articles.show', [$item->type, $item->slug]) }}"
+                        class="inline-flex items-center gap-2 text-white/80 hover:text-white text-sm transition-colors outline outline-1 outline-white/30 rounded-lg px-3 py-2 hover:outline-white/60">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                        Voltar
+                    </a>
 
+                    @if ($item->category)
+                        <span class="bg-[#77c159] text-white text-xs font-semibold px-3 py-1 rounded-full shadow-md">
+                            {{ $item->category }}
+                        </span>
+                    @endif
+                </div>
+
+                {{-- Title --}}
+                <div class="max-w-4xl mx-auto w-full">
                     <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight">
                         {{ $item->title }}
                     </h1>

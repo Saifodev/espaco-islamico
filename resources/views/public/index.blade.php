@@ -22,9 +22,9 @@
         $latestArticles = Article::visible()
             ->with(['author', 'categories', 'tags'])
             ->where('type', 'article')
-            ->when($featuredArticle, function ($query) use ($featuredArticle) {
-                return $query->where('id', '!=', $featuredArticle->id);
-            })
+            // ->when($featuredArticle, function ($query) use ($featuredArticle) {
+            //     return $query->where('id', '!=', $featuredArticle->id);
+            // })
             ->latest('published_at')
             ->limit(6)
             ->get();
@@ -55,6 +55,7 @@
         <x-home.news-ticker />
 
         {{-- Latest Articles --}}
+        @if ($latestArticles->isNotEmpty())
         <section class="py-12 md:py-20">
             <div class="max-w-7xl mx-auto px-4 sm:px-6">
                 <div class="flex items-center justify-between mb-10">
@@ -89,8 +90,10 @@
                 @endif
             </div>
         </section>
+        @endif
 
         {{-- Videos Section --}}
+        @if ($videos->isNotEmpty())
         <section class="py-12 md:py-20 bg-[#f9fafb]">
             <div class="max-w-7xl mx-auto px-4 sm:px-6">
                 <div class="flex items-center justify-between mb-10">
@@ -125,6 +128,7 @@
                 @endif
             </div>
         </section>
+        @endif
 
         {{-- Newspapers Section --}}
         <section class="py-12 md:py-16">

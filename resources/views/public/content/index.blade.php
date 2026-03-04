@@ -1,3 +1,7 @@
+@php
+    $useImageBackground = true;
+@endphp
+
 @extends('layouts.public')
 
 @section('title', $pageTitle . ' - Espaço Islâmico')
@@ -20,8 +24,28 @@
     <div x-data="magazineModal()" x-on:open-magazine.window="open($event.detail)" class="relative">
         <div class="min-h-screen bg-white">
             {{-- Header --}}
-            <div class="bg-gradient-to-br from-[#1a1a1a] to-[#2d2d2d] py-16 md:py-20">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 text-center">
+            <div class="relative py-16 md:py-20 overflow-hidden isolate
+                {{ $useImageBackground ? 'bg-cover bg-center bg-no-repeat' : 'bg-gradient-to-br from-[#1a1a1a] to-[#2d2d2d]' }}"
+                @if ($useImageBackground) style="background-image: url('{{ asset('bg3.jpg') }}');" @endif>
+
+                {{-- Dark overlay for readability --}}
+                @if ($useImageBackground)
+                    <div class="absolute inset-0 bg-black/75 backdrop-blur-[3px]"></div>
+                @endif
+
+                {{-- Soft green glow --}}
+                <div
+                    class="absolute top-0 right-0 w-[500px] h-[500px] bg-[#77c159] rounded-full blur-[200px] opacity-10 pointer-events-none">
+                </div>
+
+                {{-- Subtle texture --}}
+                <div class="absolute inset-0 opacity-[0.03] pointer-events-none"
+                    style="background-image: url('data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E');">
+                </div>
+
+                <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 text-center">
+
+                    {{-- Badge --}}
                     @if ($type === 'newspaper' && isset($typeData['badge']))
                         <div
                             class="inline-flex items-center gap-2 bg-[#77c159]/10 border border-[#77c159]/20 rounded-full px-4 py-1.5 mb-4">
@@ -30,30 +54,41 @@
                                     d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z">
                                 </path>
                             </svg>
-                            <span
-                                class="text-[#77c159] text-xs font-medium uppercase tracking-wider">{{ $typeData['badge'] }}</span>
+                            <span class="text-[#77c159] text-xs font-medium uppercase tracking-wider">
+                                {{ $typeData['badge'] }}
+                            </span>
                         </div>
                     @endif
 
-                    <h1 class="text-4xl md:text-5xl font-bold text-white mb-4">{{ $pageTitle }}</h1>
-                    <p class="text-gray-400 text-lg max-w-2xl mx-auto {{ $type === 'article' ? 'mb-8' : '' }}">
+                    {{-- Title --}}
+                    <h1 class="text-4xl md:text-5xl font-bold text-white mb-4">
+                        {{ $pageTitle }}
+                    </h1>
+
+                    {{-- Description --}}
+                    <p class="text-gray-300 text-lg max-w-2xl mx-auto {{ $type === 'article' ? 'mb-8' : '' }}">
                         {{ $typeData['description'] }}
                     </p>
 
-                    {{-- Search only for articles --}}
+                    {{-- Search (Articles only) --}}
                     @if ($type === 'article')
                         <div class="max-w-md mx-auto relative">
                             <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none"
                                 stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z">
+                                </path>
                             </svg>
+
                             <input type="text" placeholder="Pesquisar artigos..." value="{{ $searchQuery }}"
-                                class="w-full pl-12 py-4 rounded-full bg-white/10 border-white/20 text-white placeholder:text-gray-400 focus:bg-white/15 focus:outline-none focus:ring-2 focus:ring-[#77c159]/50"
+                                class="w-full pl-12 py-4 rounded-full bg-white/10 border border-white/20 text-white placeholder:text-gray-400 focus:bg-white/15 focus:outline-none focus:ring-2 focus:ring-[#77c159]/50 backdrop-blur-sm"
                                 x-data
-                                x-on:keyup="window.location.href = '{{ route('articles.type', $type) }}?search=' + encodeURIComponent($el.value)">
+                                x-on:keyup.debounce.400ms="
+                        window.location.href = '{{ route('articles.type', $type) }}?search=' + encodeURIComponent($el.value)
+                    ">
                         </div>
                     @endif
+
                 </div>
             </div>
 
@@ -203,7 +238,6 @@
 
 @push('scripts')
     <script>
-
         function magazineModal() {
             return {
                 magazine: null,
