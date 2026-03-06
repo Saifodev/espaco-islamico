@@ -124,7 +124,8 @@ class NewsletterController extends Controller
         $newsletter->update(['status' => 'sending']);
 
         // Dispara job para processar envios
-        dispatch(new \App\Jobs\ProcessNewsletterJob($newsletter));
+        // dispatch(new \App\Jobs\ProcessNewsletterJob($newsletter));
+        \App\Jobs\ProcessNewsletterJob::dispatchSync($newsletter);
 
         return redirect()->route('admin.newsletters.index')
             ->with('success', 'Envio da newsletter iniciado! ' . $subscribersCount . ' emails serão processados.');

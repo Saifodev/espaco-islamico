@@ -27,9 +27,9 @@
     @if ($type === 'video')
         @click="$dispatch('video-selected', {
             id: {{ $item->id }},
-            title: '{{ addslashes($item->title) }}',
-            youtube_url: '{{ $item->youtube_url ?? '' }}',
-            description: '{{ addslashes($item->excerpt ?? '') }}'
+            title: @js($item->title),
+            youtube_url: @js($item->youtube_url),
+            description: @js($item->excerpt)
         })"
     @elseif($type === 'newspaper')
         @click="$dispatch('open-magazine', {
@@ -77,12 +77,12 @@
                 </div>
             </div>
 
-            @if ($item->edition)
+            {{-- @if ($item->edition)
                 <span
                     class="absolute top-2 left-2 bg-[#77c159] text-white text-[10px] font-semibold px-2 py-1 rounded-full">
                     Edição {{ $item->edition }}
                 </span>
-            @endif
+            @endif --}}
         </div>
         <h3
             class="text-sm font-semibold text-[#1a1a1a] line-clamp-2 leading-tight group-hover:text-[#77c159] transition-colors">

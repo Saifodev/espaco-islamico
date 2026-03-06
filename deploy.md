@@ -20,7 +20,7 @@ Este guia mostra como hospedar, atualizar e manter uma aplicação
 ## Entrar na pasta do domínio
 
 ``` bash
-cd /home/USER/domains/seu-dominio
+cd domains/espacoislamico.com/espaco-islamico
 ```
 
 ## Clonar o projeto

@@ -96,7 +96,7 @@ class Article extends Model implements HasMedia
     // Accessors
     public function getUrlAttribute(): string
     {
-        return route('public.articles.show', $this->slug);
+        return route('articles.show', [$this->type, $this->slug]);
     }
 
     public function getTypeLabelAttribute(): string
@@ -261,6 +261,11 @@ class Article extends Model implements HasMedia
         return $query->whereHas('categories', function ($q) use ($categoryId) {
             $q->where('categories.id', $categoryId);
         });
+    }
+
+    public function scopeByType($query, $type)
+    {
+        return $query->where('type', $type);
     }
 
     // Accessors...

@@ -198,12 +198,13 @@ class ArticleService
     /**
      * Processar artigos agendados (chamado pelo scheduler)
      */
-    public function processScheduledArticles(): int
+    public function processScheduledArticles(int $limit = 100): int
     {
         $count = 0;
         
         Article::scheduled()
             ->where('published_at', '<=', now())
+            ->limit($limit)
             ->chunk(100, function ($articles) use (&$count) {
                 foreach ($articles as $article) {
                     $this->publish($article);

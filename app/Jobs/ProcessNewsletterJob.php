@@ -16,7 +16,7 @@ class ProcessNewsletterJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $timeout = 3600; // 1 hora
+    public $timeout = 3600;
     public $tries = 1;
 
     protected Newsletter $newsletter;
@@ -36,42 +36,58 @@ class ProcessNewsletterJob implements ShouldQueue
             return;
         }
 
-        // Busca assinantes ativos
         $subscribers = NewsletterSubscriber::active()->get();
 
         if ($subscribers->isEmpty()) {
+
             $this->newsletter->update([
                 'status' => 'cancelled',
                 'sent_at' => null
             ]);
-            
+
             Log::info('Nenhum assinante ativo para newsletter', [
                 'newsletter_id' => $this->newsletter->id
             ]);
-            
+
             return;
         }
 
-        // Cria registros de entrega
+        Log::info('Iniciando processamento da newsletter', [
+            'newsletter_id' => $this->newsletter->id,
+            'subscribers' => $subscribers->count()
+        ]);
+
         foreach ($subscribers as $subscriber) {
+
             $delivery = NewsletterDelivery::create([
                 'newsletter_id' => $this->newsletter->id,
                 'email' => $subscriber->email,
                 'status' => 'pending'
             ]);
 
-            // Dispara job individual para cada email
-            SendNewsletterJob::dispatch($delivery)
-                ->onQueue('newsletters');
+            SendNewsletterJob::dispatchSync($delivery);
+        }
+
+        $this->finalizeNewsletter();
+    }
+
+    protected function finalizeNewsletter(): void
+    {
+        $pending = NewsletterDelivery::where('newsletter_id', $this->newsletter->id)
+            ->where('status', 'pending')
+            ->exists();
+
+        if ($pending) {
+            return;
         }
 
         $this->newsletter->update([
-            'status' => 'sending'
+            'status' => 'sent',
+            'sent_at' => now()
         ]);
 
-        Log::info('Processamento de newsletter iniciado', [
-            'newsletter_id' => $this->newsletter->id,
-            'subscribers' => $subscribers->count()
+        Log::info('Newsletter finalizada', [
+            'newsletter_id' => $this->newsletter->id
         ]);
     }
 }

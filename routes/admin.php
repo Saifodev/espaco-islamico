@@ -4,7 +4,7 @@ use App\Http\Controllers\Admin\{UserController};
 use App\Domains\Content\Http\Controllers\Admin\ArticleController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
-use App\Domains\Content\Http\Livewire\Admin\{ArticleTable, ArticleForm};
+use App\Domains\Content\Http\Livewire\Admin\{ArticleTable, ArticleForm, ArticleShow};
 
 Route::get('/', function () {
     return redirect()->route('admin.dashboard');
@@ -35,6 +35,7 @@ Route::group([], function () {
             Route::get('/', ArticleTable::class)->name('index');
             Route::get('/create', ArticleForm::class)->name('create');
             Route::get('/{article}/edit', ArticleForm::class)->name('edit');
+            Route::get('/{article}', ArticleShow::class)->name('show');
             
             // Ações adicionais
             Route::post('/{article}/publish', [ArticleController::class, 'publish'])

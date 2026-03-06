@@ -21,7 +21,7 @@ class ArticleForm extends Component
     use WithFileUploads;
 
     public ?Article $article = null;
-    
+
     // Dados do formulário
     public string $type = 'article';
     public string $title = '';
@@ -33,12 +33,19 @@ class ArticleForm extends Component
     public string $status = 'draft';
     public ?string $published_at = null;
     public array $selectedCategories = [];
-    
-    // Upload de imagem simplificado
-    public $featured_image_temp = null; // Arquivo temporário do Livewire
-    public ?string $featured_image_url = null; // URL da imagem atual/preview
-    public ?int $featured_image_id = null; // ID da mídia atual para referência
-    
+
+    // Upload de imagem
+    public $featured_image_temp = null;
+    public ?string $featured_image_url = null;
+    public ?int $featured_image_id = null;
+
+    // Upload de PDF para newspaper
+    public $pdf_temp = null;
+    public ?string $pdf_url = null;
+    public ?string $pdf_name = null;
+    public ?int $pdf_id = null;
+    public bool $removeCurrentPdf = false;
+
     // Controle de UI
     public bool $isEditing = false;
     public bool $showPreview = false;
@@ -66,14 +73,27 @@ class ArticleForm extends Component
         if ($this->type === 'article') {
             $rules['content'] = 'required|min:10';
         } elseif ($this->type === 'video') {
-            $rules['youtube_url'] = 'required|url|regex:/^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+$/';
+            $rules['youtube_url'] = [
+                'required',
+                'url',
+                function ($attribute, $value, $fail) {
+                    if (!str_contains($value, 'youtube.com') && !str_contains($value, 'youtu.be')) {
+                        $fail('A URL deve ser do YouTube.');
+                    }
+                }
+            ];
         } elseif ($this->type === 'newspaper') {
             $rules['edition'] = 'required|max:100';
+            
+            // Regras para PDF apenas se um novo arquivo foi enviado
+            if ($this->pdf_temp) {
+                $rules['pdf_temp'] = 'file|mimes:pdf|max:20480'; // 20MB max
+            }
         }
 
-        // Regra para imagem - apenas valida se um novo arquivo foi enviado
+        // Regra para imagem
         if ($this->featured_image_temp) {
-            $rules['featured_image_temp'] = 'image|max:5120'; // 5MB max
+            $rules['featured_image_temp'] = 'image|max:5120';
         }
 
         return $rules;
@@ -84,6 +104,8 @@ class ArticleForm extends Component
         'featured_image_temp.max' => 'A imagem não pode ter mais que 5MB',
         'youtube_url.regex' => 'Por favor, insira uma URL válida do YouTube',
         'edition.required' => 'O número da edição é obrigatório para jornais',
+        'pdf_temp.mimes' => 'O arquivo deve ser um PDF válido',
+        'pdf_temp.max' => 'O PDF não pode ter mais que 20MB',
     ];
 
     public function mount(?Article $article = null): void
@@ -102,12 +124,22 @@ class ArticleForm extends Component
             $this->status = $article->status->value;
             $this->published_at = $article->published_at?->format('Y-m-d\TH:i');
             $this->selectedCategories = $article->categories->pluck('id')->toArray();
-            
-            // Carregar imagem atual da Media Library
+
+            // Carregar imagem atual
             if ($article->hasFeaturedImage()) {
                 $media = $article->getFirstMedia(MediaCollectionType::FEATURED_IMAGE->value);
-                $this->featured_image_url = $article->getFeaturedImageUrl('preview');
+                $this->featured_image_url = $article->getFeaturedImageUrl();
                 $this->featured_image_id = $media?->id;
+            }
+
+            // Carregar PDF atual para newspaper
+            if ($this->type === 'newspaper' && $article->hasMedia('documents')) {
+                $pdf = $article->getFirstMedia('documents');
+                if ($pdf) {
+                    $this->pdf_url = $pdf->getUrl();
+                    $this->pdf_name = $pdf->file_name;
+                    $this->pdf_id = $pdf->id;
+                }
             }
         } else {
             $this->published_at = now()->format('Y-m-d\TH:i');
@@ -130,25 +162,49 @@ class ArticleForm extends Component
     {
         $this->validateOnly('featured_image_temp');
         
-        // Criar preview temporário do Livewire
         if ($this->featured_image_temp) {
             $this->featured_image_url = $this->featured_image_temp->temporaryUrl();
-            $this->removeCurrentImage = false; // Reset flag de remoção
+            $this->removeCurrentImage = false;
+        }
+    }
+
+    public function updatedPdfTemp()
+    {
+        $this->validateOnly('pdf_temp');
+        
+        // Quando um novo PDF é selecionado, marcamos para remover o antigo no save
+        if ($this->pdf_temp && $this->pdf_id) {
+            $this->removeCurrentPdf = true;
         }
     }
 
     public function removeFeaturedImage()
     {
         $this->featured_image_temp = null;
-        
+
         if ($this->isEditing && $this->article?->hasFeaturedImage()) {
-            // Marcar para remoção no save
             $this->removeCurrentImage = true;
             $this->featured_image_url = null;
             $this->featured_image_id = null;
         } else {
             $this->featured_image_url = null;
             $this->featured_image_id = null;
+        }
+    }
+
+    public function removePdf()
+    {
+        $this->pdf_temp = null;
+
+        if ($this->isEditing && $this->pdf_id) {
+            $this->removeCurrentPdf = true;
+            $this->pdf_url = null;
+            $this->pdf_name = null;
+            $this->pdf_id = null;
+        } else {
+            $this->pdf_url = null;
+            $this->pdf_name = null;
+            $this->pdf_id = null;
         }
     }
 
@@ -160,6 +216,11 @@ class ArticleForm extends Component
         }
         if ($value !== 'newspaper') {
             $this->edition = null;
+            $this->pdf_temp = null;
+            $this->pdf_url = null;
+            $this->pdf_name = null;
+            $this->pdf_id = null;
+            $this->removeCurrentPdf = false;
         }
         if ($value !== 'article') {
             $this->content = null;
@@ -176,7 +237,7 @@ class ArticleForm extends Component
             'title' => $this->title,
             'slug' => $this->slug,
             'excerpt' => $this->excerpt,
-            'content' => $this->type === 'article' ? $this->content : null,
+            'content' => $this->type === 'article' ? $this->content : '',
             'youtube_url' => $this->type === 'video' ? $this->youtube_url : null,
             'edition' => $this->type === 'newspaper' ? $this->edition : null,
             'status' => $this->status,
@@ -187,46 +248,41 @@ class ArticleForm extends Component
         try {
             DB::transaction(function () use ($data) {
                 if ($this->isEditing) {
-                    // Atualizar artigo
                     $this->article->update($data);
-                    
-                    // Gerenciar imagem de destaque
                     $this->handleFeaturedImage($this->article);
-                    
+                    $this->handlePdf($this->article);
                 } else {
-                    // Criar artigo
                     $this->article = Article::create($data);
-                    
-                    // Gerenciar imagem de destaque
                     $this->handleFeaturedImage($this->article);
+                    $this->handlePdf($this->article);
                 }
-                
+
                 // Sincronizar categorias
                 $this->article->categories()->sync($this->selectedCategories);
             });
 
             session()->flash('success', $this->isEditing ? 'Artigo atualizado com sucesso!' : 'Artigo criado com sucesso!');
-            
-            return $this->isEditing 
-                ? redirect()->route('admin.articles.index')
-                : redirect()->route('admin.articles.edit', $this->article);
 
+            // return $this->isEditing
+            //     ? redirect()->route('admin.articles.index')
+            //     : redirect()->route('admin.articles.edit', $this->article);
+            return redirect()->route('admin.articles.show', $this->article->id);
         } catch (\Exception $e) {
             Log::error('Erro ao salvar artigo', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             session()->flash('error', 'Erro ao salvar: ' . $e->getMessage());
         }
     }
 
     /**
-     * Gerenciar upload/remoção da imagem de destaque usando MediaService
+     * Gerenciar upload/remoção da imagem de destaque
      */
     protected function handleFeaturedImage(Article $article): void
     {
-        // Caso 1: Remover imagem existente (marcado para remoção)
+        // Remover imagem existente
         if ($this->removeCurrentImage && $this->featured_image_id) {
             $this->mediaService->remove($article, $this->featured_image_id);
             $this->featured_image_id = null;
@@ -234,10 +290,9 @@ class ArticleForm extends Component
             $this->removeCurrentImage = false;
         }
 
-        // Caso 2: Upload de nova imagem
+        // Upload de nova imagem
         if ($this->featured_image_temp) {
             try {
-                // Se já tem imagem, substitui (media service lida com isso)
                 $media = $this->mediaService->upload(
                     model: $article,
                     file: $this->featured_image_temp,
@@ -247,25 +302,79 @@ class ArticleForm extends Component
                         'uploaded_by' => Auth::id(),
                         'uploaded_at' => now()->toDateTimeString(),
                         'article_type' => $this->type,
-                    ]
+                    ],
+                    preserveOriginal: true
                 );
 
-                // Atualizar referências
                 $this->featured_image_id = $media->id;
-                $this->featured_image_url = $media->getUrl('preview');
-                
-                // Limpar temp
+                $this->featured_image_url = $media->getUrl();
                 $this->featured_image_temp = null;
-
             } catch (\Exception $e) {
                 Log::error('Erro no upload da imagem', [
                     'article_id' => $article->id,
                     'error' => $e->getMessage()
                 ]);
-                
                 throw new \Exception('Falha ao fazer upload da imagem: ' . $e->getMessage());
             }
         }
+    }
+
+    /**
+     * Gerenciar upload/remoção do PDF para newspaper
+     */
+    protected function handlePdf(Article $article): void
+    {
+        // Só processa PDF se for do tipo newspaper
+        if ($this->type !== 'newspaper') {
+            return;
+        }
+
+        // Remover PDF existente
+        if ($this->removeCurrentPdf && $this->pdf_id) {
+            $this->mediaService->remove($article, $this->pdf_id);
+            $this->pdf_id = null;
+            $this->pdf_url = null;
+            $this->pdf_name = null;
+            $this->removeCurrentPdf = false;
+        }
+
+        // Upload de novo PDF
+        if ($this->pdf_temp) {
+            try {
+                $media = $this->mediaService->upload(
+                    model: $article,
+                    file: $this->pdf_temp,
+                    collection: MediaCollectionType::DOCUMENTS,
+                    customName: "newspaper-{$article->slug}-edition-{$this->edition}",
+                    customProperties: [
+                        'uploaded_by' => Auth::id(),
+                        'uploaded_at' => now()->toDateTimeString(),
+                        'edition' => $this->edition,
+                        'article_type' => $this->type,
+                    ],
+                    preserveOriginal: true
+                );
+
+                $this->pdf_id = $media->id;
+                $this->pdf_url = $media->getUrl();
+                $this->pdf_name = $media->file_name;
+                $this->pdf_temp = null;
+            } catch (\Exception $e) {
+                Log::error('Erro no upload do PDF', [
+                    'article_id' => $article->id,
+                    'error' => $e->getMessage()
+                ]);
+                throw new \Exception('Falha ao fazer upload do PDF: ' . $e->getMessage());
+            }
+        }
+    }
+
+    public function updated($propertyName)
+    {
+        if ($propertyName === 'featured_image_temp' || $propertyName === 'pdf_temp') {
+            return;
+        }
+        $this->validateOnly($propertyName);
     }
 
     public function togglePreview()
@@ -273,27 +382,19 @@ class ArticleForm extends Component
         $this->showPreview = !$this->showPreview;
     }
 
-    /**
-     * Regras de validação em tempo real
-     */
-    public function updated($propertyName)
-    {
-        $this->validateOnly($propertyName);
-    }
-
     public function render()
     {
         return view('livewire.admin.article-form', [
             'categories' => Category::orderBy('name')->get(),
             'contentTypes' => [
-                ['value' => 'article', 'label' => 'Artigo', 'icon' => 'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z'],
-                ['value' => 'video', 'label' => 'Vídeo', 'icon' => 'M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z'],
-                ['value' => 'newspaper', 'label' => 'Jornal', 'icon' => 'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9'],
+                ['value' => 'article', 'label' => 'Artigo'],
+                ['value' => 'video', 'label' => 'Vídeo'],
+                ['value' => 'newspaper', 'label' => 'Jornal'],
             ],
             'statusOptions' => [
-                ['value' => 'draft', 'label' => 'Rascunho', 'color' => 'gray'],
-                ['value' => 'published', 'label' => 'Publicar', 'color' => 'green'],
-                ['value' => 'scheduled', 'label' => 'Agendar', 'color' => 'yellow'],
+                ['value' => 'draft', 'label' => 'Rascunho'],
+                ['value' => 'published', 'label' => 'Publicar'],
+                ['value' => 'scheduled', 'label' => 'Agendar'],
             ],
         ]);
     }

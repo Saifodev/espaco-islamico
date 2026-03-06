@@ -51,9 +51,9 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
+        {{-- <div class="header">
             <h1>{{ $newsletter->subject }}</h1>
-        </div>
+        </div> --}}
         
         <div class="content">
             {!! $newsletter->content !!}

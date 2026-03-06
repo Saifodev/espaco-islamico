@@ -58,9 +58,10 @@ class ArticleController extends Controller
         // Query base
         $query = Article::visible()
             ->with(['author', 'categories', 'tags'])
-            ->when($type, function ($q) use ($type) {
-                return $q->where('type', $type);
-            })
+            // ->when($type, function ($q) use ($type) {
+            //     return $q->where('type', $type);
+            // })
+            ->byType($type ?? 'article')
             ->filterByCategory($category);
 
         // Ordenação diferente para jornais

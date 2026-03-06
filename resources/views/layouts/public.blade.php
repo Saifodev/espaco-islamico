@@ -35,6 +35,17 @@
             --brand-green-dark: #5fa343;
             --brand-green-light: #e8f5e0;
         }
+
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
     </style>
 </head>
 
@@ -80,9 +91,8 @@
                     $currentType = request()->route('type');
                 @endphp
 
-                {{-- Desktop Layout (md and up) --}}
+                {{-- Desktop Layout --}}
                 <div class="hidden md:flex items-center justify-between h-20">
-                    {{-- Logo (sempre visível no desktop) --}}
                     <a href="{{ route('home') }}" class="flex items-center gap-3 shrink-0">
                         <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/user_69a0952abe7cb8c0c94a27c4/13aba247d_logo.png"
                             alt="Espaço Islâmico" class="h-12 w-auto">
@@ -93,7 +103,6 @@
                         </div>
                     </a>
 
-                    {{-- Desktop Navigation --}}
                     <nav class="flex items-center gap-1">
                         @foreach ($navLinks as $link)
                             @php
@@ -126,9 +135,8 @@
                     </nav>
                 </div>
 
-                {{-- Mobile Layout (below md) - Menu sempre visível, logo escondido --}}
+                {{-- Mobile Layout --}}
                 <div class="md:hidden py-3">
-                    {{-- Mobile Navigation - Sempre visível --}}
                     <nav class="flex items-center justify-between gap-1 overflow-x-auto pb-1 scrollbar-hide">
                         @foreach ($navLinks as $link)
                             @php
@@ -259,21 +267,16 @@
     {{-- Scripts --}}
     @vite(['resources/js/app.js'])
     @livewireScripts
-    @stack('scripts')
 
-    {{-- Optional: Add custom scrollbar hiding for mobile menu --}}
-    <style>
-        /* Hide scrollbar for Chrome, Safari and Opera */
-        .scrollbar-hide::-webkit-scrollbar {
-            display: none;
-        }
-        
-        /* Hide scrollbar for IE, Edge and Firefox */
-        .scrollbar-hide {
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
-        }
-    </style>
+    {{-- PDF.js --}}
+    <script src="https://unpkg.com/pdfjs-dist@3.10.111/legacy/build/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+            "https://unpkg.com/pdfjs-dist@3.10.111/legacy/build/pdf.worker.min.js";
+    </script>
+
+    {{-- Alpine.js e outras funcionalidades --}}
+    @stack('scripts')
 </body>
 
 </html>

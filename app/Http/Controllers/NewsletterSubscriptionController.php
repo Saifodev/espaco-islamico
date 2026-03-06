@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\NewsletterSubscriber;
+use App\Mail\WelcomeNewsletterMail;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 
 class NewsletterSubscriptionController extends Controller
@@ -14,7 +16,7 @@ class NewsletterSubscriptionController extends Controller
             'email' => 'required|email'
         ]);
 
-        NewsletterSubscriber::updateOrCreate(
+        $subscriber = NewsletterSubscriber::updateOrCreate(
             ['email' => $request->email],
             [
                 'is_active' => true,
@@ -23,7 +25,16 @@ class NewsletterSubscriptionController extends Controller
             ]
         );
 
-        // Log::info('New newsletter subscription', ['email' => $request->email]);
+        // Enviar email de boas-vindas
+        try {
+            Mail::to($request->email)->send(new WelcomeNewsletterMail($request->email));
+            // Log::info('Welcome email sent to newsletter subscriber', ['email' => $request->email]);
+        } catch (\Exception $e) {
+            Log::error('Failed to send welcome email to newsletter subscriber', [
+                'email' => $request->email,
+                'error' => $e->getMessage()
+            ]);
+        }
 
         return response()->json(['success' => true]);
     }
@@ -40,7 +51,8 @@ class NewsletterSubscriptionController extends Controller
                 'unsubscribed_at' => now()
             ]);
 
-            // return view('public.newsletter-unsubscribed');
+            // Log::info('Newsletter subscriber unsubscribed', ['email' => $email]);
+
             return redirect()->route('home');
         }
 

@@ -12,9 +12,9 @@
     :class="show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'"
     @click="$dispatch('video-selected', {
         id: {{ $video->id }},
-        title: '{{ addslashes($video->title) }}',
-        youtube_url: '{{ $video->youtube_url ?? '' }}',
-        description: '{{ addslashes($video->excerpt ?? '') }}'
+        title: @js($video->title),
+        youtube_url: @js($video->youtube_url),
+        description: @js($video->excerpt)
     })"
     class="group cursor-pointer h-full w-full transition-all duration-300">
 

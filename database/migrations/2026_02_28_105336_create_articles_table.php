@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('title');
             $table->string('slug')->unique();
             $table->text('excerpt')->nullable();
-            $table->longText('content');
+            $table->longText('content')->nullable();
             $table->string('youtube_url')->nullable(); // Para vídeos, se necessário
             $table->string('edition')->nullable(); // Para edições de jornais, se necessário
             $table->string('status')->default('draft');

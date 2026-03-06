@@ -21,7 +21,7 @@
 @endpush
 
 @section('content')
-    <div x-data="magazineModal()" x-on:open-magazine.window="open($event.detail)" class="relative">
+    <div x-data="magazineModal()" @open-magazine.window="open($event.detail)" class="relative">
         <div class="min-h-screen bg-white">
             {{-- Header --}}
             <div class="relative py-16 md:py-20 overflow-hidden isolate
@@ -83,9 +83,9 @@
                             <input type="text" placeholder="Pesquisar artigos..." value="{{ $searchQuery }}"
                                 class="w-full pl-12 py-4 rounded-full bg-white/10 border border-white/20 text-white placeholder:text-gray-400 focus:bg-white/15 focus:outline-none focus:ring-2 focus:ring-[#77c159]/50 backdrop-blur-sm"
                                 x-data
-                                x-on:keyup.debounce.400ms="
-                        window.location.href = '{{ route('articles.type', $type) }}?search=' + encodeURIComponent($el.value)
-                    ">
+                                @keyup.debounce.400ms="
+                                    window.location.href = '{{ route('articles.type', $type) }}?search=' + encodeURIComponent($el.value)
+                                ">
                         </div>
                     @endif
 
@@ -127,7 +127,7 @@
                                 <x-content-card :item="$item" :type="$type" :index="$index" />
                             @endforeach
                         </div>
-                    @else
+                    @elseif($type === 'article')
                         {{-- Article Grid --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             @foreach ($items as $index => $item)
@@ -238,20 +238,154 @@
 
 @push('scripts')
     <script>
+        // Função do modal de revista
         function magazineModal() {
             return {
                 magazine: null,
 
-                open(data) {
-                    this.magazine = data
-                    document.body.classList.add('overflow-hidden')
-                    console.log('Abrindo revista:', data)
+                open(magazineData) {
+                    this.magazine = magazineData;
                 },
 
                 close() {
-                    this.magazine = null
-                    document.body.classList.remove('overflow-hidden')
+                    this.magazine = null;
                 }
+            }
+        }
+
+        // Função do leitor de PDF
+        let pdfDoc = null;
+
+        function magazineReader(magazine) {
+            return {
+
+                magazine: magazine,
+                currentPage: 1,
+                numPages: 0,
+                scale: 1,
+                loading: true,
+                started: false,
+
+                init() {
+
+                    if (this.started) return;
+                    this.started = true;
+
+                    this.loadPdf();
+                },
+
+                async loadPdf() {
+
+                    if (typeof pdfjsLib === 'undefined') {
+                        return;
+                    }
+
+                    try {
+
+                        this.loading = true;
+
+                        const loadingTask = pdfjsLib.getDocument(this.magazine.pdf_url);
+
+                        loadingTask.onProgress = (progress) => {};
+
+                        pdfDoc = await loadingTask.promise;
+
+                        this.numPages = pdfDoc.numPages;
+
+                        await this.renderPage();
+
+                    } catch (error) {
+                        console.error("❌ Erro ao carregar PDF:", error);
+                        this.loading = false;
+
+                    }
+                },
+
+                async renderPage() {
+                    if (!pdfDoc) {
+                        console.warn("⚠️ PDF ainda não carregado");
+                        return;
+                    }
+
+                    try {
+
+                        this.loading = true;
+
+                        const page = await pdfDoc.getPage(this.currentPage);
+
+                        const viewport = page.getViewport({
+                            scale: this.scale
+                        });
+
+                        const canvas = this.$refs.canvas;
+
+                        if (!canvas) {
+                            console.error("❌ Canvas não encontrado");
+                            return;
+                        }
+
+                        const context = canvas.getContext("2d");
+
+                        canvas.width = viewport.width;
+                        canvas.height = viewport.height;
+
+                        const renderTask = page.render({
+                            canvasContext: context,
+                            viewport: viewport
+                        });
+
+                        await renderTask.promise;
+
+                        this.loading = false;
+
+                    } catch (error) {
+
+                        console.error("❌ Erro ao renderizar página:", error);
+                        this.loading = false;
+
+                    }
+                },
+
+                nextPage() {
+
+                    if (this.currentPage >= this.numPages) {
+                        return;
+                    }
+
+                    this.currentPage++;
+
+                    this.renderPage();
+                },
+
+                prevPage() {
+
+                    if (this.currentPage <= 1) {
+                        console.warn("⚠️ Já está na primeira página");
+                        return;
+                    }
+
+                    this.currentPage--;
+
+                    this.renderPage();
+                },
+
+                zoomIn() {
+                    if (this.scale >= 2.5) return;
+
+                    this.scale += 0.2;
+
+                    this.renderPage();
+                },
+
+                zoomOut() {
+
+                    if (this.scale <= 0.5) return;
+
+                    this.scale -= 0.2;
+
+                    this.renderPage();
+                }
+
             }
         }
     </script>
