@@ -42,7 +42,7 @@ class ArticleController extends Controller
     }
 
     /**
-     * Armazenar novo artigo
+     * Armazenar novo
      */
     public function store(ArticleRequest $request): RedirectResponse
     {

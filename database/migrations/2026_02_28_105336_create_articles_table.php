@@ -9,7 +9,7 @@ return new class extends Migration
     {
         Schema::create('articles', function (Blueprint $table) {
             $table->id();
-            $table->enum('type', ['article', 'video', 'newspaper'])->default('article');
+            $table->enum('type', ['article', 'video', 'newspaper', 'news'])->default('news');
             $table->string('title');
             $table->string('slug')->unique();
             $table->text('excerpt')->nullable();

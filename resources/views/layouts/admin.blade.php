@@ -13,18 +13,22 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+
+    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700|merriweather:400,700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <!-- Tiny MCE -->
-    {{-- <script src="https://cdn.tiny.cloud/1/{{ env('TINY_MCE_API_KEY') }}/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script> --}}
-    <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/8/tinymce.min.js" referrerpolicy="origin" crossorigin="anonymous"></script>
+    <script src="https://cdn.tiny.cloud/1/{{ env('TINY_MCE_API_KEY') }}/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
     <!-- Scripts -->
+    @livewireStyles
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     
-    @livewireStyles
     @stack('styles')
 </head>
 <body class="font-sans antialiased">
@@ -47,7 +51,20 @@
         </main>
     </div>
 
-    @livewireScripts
     @stack('scripts')
+    @livewireScripts
+
+    <script>
+        document.addEventListener('livewire:initialized', () => {
+            // Notificações de sucesso
+            Livewire.on('comment-approved', () => {
+                // Mostrar notificação
+            });
+            
+            Livewire.on('comment-marked-spam', () => {
+                // Mostrar notificação
+            });
+        });
+    </script>
 </body>
 </html>

@@ -1,41 +1,10 @@
 {{-- resources/views/components/home/news-ticker.blade.php --}}
-@props(['newsItems' => []])
+@props(['news' => []])
 
 @php
-    $defaultItems = [
-        [
-            'id' => 1,
-            'date' => '24 de Fevereiro',
-            'title' => '"A união é necessária para a sobrevivência do Islão em Moçambique", defende Sheikh Assamo Arby',
-            'image' => 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69a0c7ea57d63d0dae4b96d9/957a5af98_641320725_122158817546684672_2983646151850999856_n.jpg',
-        ],
-        [
-            'id' => 2,
-            'date' => '23 de Fevereiro',
-            'title' => '"O Ramadhan é um campo de batalha contra o nosso próprio ego", diz Sheikh Aminuddin Mohammad',
-            'image' => 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69a0c7ea57d63d0dae4b96d9/4efc7f06f_641434325_122158752824684672_1215264471937118964_n.jpg',
-        ],
-        [
-            'id' => 3,
-            'date' => '23 de Fevereiro',
-            'title' => 'Nova Lei de Liberdade Religiosa trava exploração com promessas de cura ou riqueza, esclarece Sheikh Suleiman',
-            'image' => 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69a0c7ea57d63d0dae4b96d9/5c05ba295_641554215_122158743998684672_6930089288022767805_n.jpg',
-        ],
-        [
-            'id' => 4,
-            'date' => '23 de Fevereiro',
-            'title' => 'Momade Bachir anuncia doação de 15 mil tapetes de oração e tasbihs para Nampula, Zambézia e Cabo Delgado',
-            'image' => 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69a0c7ea57d63d0dae4b96d9/7c6a1c0fe_640082077_122158765316684672_3122828608491187390_n.jpg',
-        ],
-        [
-            'id' => 5,
-            'date' => '22 de Fevereiro',
-            'title' => 'Agência de Viagem Safire facilita peregrinação de 25 fiéis ao Umrah sob orientação do Sheikh Umar Aiuba',
-            'image' => 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69a0c7ea57d63d0dae4b96d9/7141c0d5e_638599081_122158641224684672_190671799107923363_n.jpg',
-        ],
-    ];
+    $defaultItems = [];
     
-    $items = $newsItems ?: $defaultItems;
+    $items = $news ?: $defaultItems;
 @endphp
 
 <div x-data="newsTicker()" x-init="init()" class="bg-[#1a1a1a] py-10 md:py-14 overflow-hidden">

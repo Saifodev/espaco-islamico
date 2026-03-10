@@ -283,6 +283,6 @@ class ArticleShow extends Component
     {
         return view('livewire.admin.article-show', [
             'comments' => $this->comments,
-        ]);
+        ])->layout('layouts.admin');
     }
 }

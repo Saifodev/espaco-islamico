@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Requests\Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
@@ -10,7 +11,7 @@ class AcceptInvitationRequest extends FormRequest
     {
         return [
             'token' => ['required', 'string'],
-            'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()],
+            'password' => ['required', 'confirmed', Password::min(6)],
         ];
     }
 }

@@ -29,7 +29,7 @@
 
                 {{-- Top bar --}}
                 <div class="flex items-center justify-between max-w-4xl mx-auto w-full">
-                    <a href="{{ route('articles.show', [$item->type, $item->slug]) }}"
+                    <a href="{{ redirect()->back()->getTargetUrl() }}"
                         class="inline-flex items-center gap-2 text-white/80 hover:text-white text-sm transition-colors outline outline-1 outline-white/30 rounded-lg px-3 py-2 hover:outline-white/60">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

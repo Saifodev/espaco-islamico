@@ -8,25 +8,29 @@
     <form method="POST" action="{{ route('invitation.accept.post') }}">
         @csrf
 
+        @if ($errors->any())
+            <div class="mb-4 text-red-600 text-sm">
+                {{ $errors->first() }}
+            </div>
+        @endif
+
         <input type="hidden" name="token" value="{{ $token }}">
 
         <!-- Password -->
         <div class="mt-4">
             <label for="password" class="block font-medium text-sm text-gray-700">Senha</label>
-            <input id="password" class="block mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                            type="password"
-                            name="password"
-                            required autocomplete="new-password" />
-            <p class="text-xs text-gray-500 mt-1">Mínimo 8 caracteres, com letras maiúsculas, minúsculas e números.</p>
+            <input id="password"
+                class="block mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                type="password" name="password" required autocomplete="new-password" />
+            <p class="text-xs text-gray-500 mt-1">Mínimo 6 caracteres.</p>
         </div>
 
         <!-- Confirm Password -->
         <div class="mt-4">
             <label for="password_confirmation" class="block font-medium text-sm text-gray-700">Confirmar Senha</label>
-            <input id="password_confirmation" class="block mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                            type="password"
-                            name="password_confirmation"
-                            required />
+            <input id="password_confirmation"
+                class="block mt-1 w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                type="password" name="password_confirmation" required />
         </div>
 
         <div class="flex items-center justify-end mt-4">

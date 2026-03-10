@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Log;
 class ArticleService
 {
     /**
-     * Criar um novo artigo
+     * Criar um novo
      */
     public function create(array $data, User $author): Article
     {

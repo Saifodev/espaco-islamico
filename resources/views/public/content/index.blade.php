@@ -134,6 +134,13 @@
                                 <x-content-card :item="$item" :type="$type" :index="$index" />
                             @endforeach
                         </div>
+                    @elseif($type === 'news')
+                        {{-- News Grid --}}
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            @foreach ($items as $index => $item)
+                                <x-content-card :item="$item" :type="$type" :index="$index" />
+                            @endforeach
+                        </div>
                     @endif
 
                     {{-- Pagination --}}

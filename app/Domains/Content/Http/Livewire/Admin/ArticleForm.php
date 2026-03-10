@@ -61,7 +61,7 @@ class ArticleForm extends Component
     protected function rules()
     {
         $rules = [
-            'type' => 'required|in:article,video,newspaper',
+            'type' => 'required|in:article,video,newspaper,news',
             'title' => 'required|min:3|max:255',
             'slug' => 'required|max:255|unique:articles,slug,' . ($this->article?->id ?? 'NULL'),
             'excerpt' => 'nullable|max:500',
@@ -237,7 +237,7 @@ class ArticleForm extends Component
             'title' => $this->title,
             'slug' => $this->slug,
             'excerpt' => $this->excerpt,
-            'content' => $this->type === 'article' ? $this->content : '',
+            'content' => in_array($this->type, ['article', 'news']) ? $this->content : '',
             'youtube_url' => $this->type === 'video' ? $this->youtube_url : null,
             'edition' => $this->type === 'newspaper' ? $this->edition : null,
             'status' => $this->status,
@@ -390,12 +390,14 @@ class ArticleForm extends Component
                 ['value' => 'article', 'label' => 'Artigo'],
                 ['value' => 'video', 'label' => 'Vídeo'],
                 ['value' => 'newspaper', 'label' => 'Jornal'],
+                ['value' => 'news', 'label' => 'Notícia'],
             ],
             'statusOptions' => [
                 ['value' => 'draft', 'label' => 'Rascunho'],
                 ['value' => 'published', 'label' => 'Publicar'],
                 ['value' => 'scheduled', 'label' => 'Agendar'],
+                ['value' => 'archived', 'label' => 'Arquivar'],
             ],
-        ]);
+        ])->layout('layouts.admin');
     }
 }

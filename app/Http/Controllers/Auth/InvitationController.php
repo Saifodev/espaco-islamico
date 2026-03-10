@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
@@ -24,17 +25,19 @@ class InvitationController extends Controller
     public function accept(AcceptInvitationRequest $request)
     {
         $user = $this->userService->acceptInvitation(
-            $request->token, 
+            $request->token,
             $request->password
         );
 
         if (!$user) {
-            return back()->withErrors(['token' => 'Token de convite inválido ou já utilizado.']);
+            return back()
+                ->with('error', 'Token de convite inválido ou já utilizado.');
         }
 
         Auth::login($user);
 
-        return redirect()->route('admin.dashboard')
+        return redirect()
+            ->route('admin.dashboard')
             ->with('success', 'Bem-vindo! Sua conta foi ativada com sucesso.');
     }
 }

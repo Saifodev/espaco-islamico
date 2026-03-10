@@ -124,14 +124,14 @@
                 <div class="p-6">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">Ações Rápidas</h3>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        @can('create users')
+                        @can('manage users')
                         <a href="{{ route('admin.users.create') }}" class="bg-blue-50 hover:bg-blue-100 rounded-lg p-4 text-center transition duration-150">
                             <i class="fas fa-user-plus text-2xl text-blue-600 mb-2"></i>
                             <p class="text-sm font-medium text-gray-700">Novo Usuário</p>
                         </a>
                         @endcan
 
-                        @can('view users')
+                        @can('manage users')
                         <a href="{{ route('admin.users.index') }}" class="bg-green-50 hover:bg-green-100 rounded-lg p-4 text-center transition duration-150">
                             <i class="fas fa-list text-2xl text-green-600 mb-2"></i>
                             <p class="text-sm font-medium text-gray-700">Gerenciar Usuários</p>

@@ -5,14 +5,13 @@ use App\Domains\Content\Http\Controllers\Admin\ArticleController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Domains\Content\Http\Livewire\Admin\{ArticleTable, ArticleForm, ArticleShow};
+use App\Livewire\Admin\Dashboard;
 
 Route::get('/', function () {
     return redirect()->route('admin.dashboard');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->name('dashboard');
+Route::get('/dashboard', Dashboard::class)->name('dashboard');
 
 // Rotas de perfil
 Route::group([], function () {

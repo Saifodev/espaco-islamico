@@ -3,7 +3,8 @@
 
 @section('title', 'Espaço Islâmico - Jornal Digital Islâmico em Português')
 
-@section('description', 'O primeiro jornal digital islâmico em língua portuguesa dedicado a Moçambique e aos países
+@section('description',
+    'O primeiro jornal digital islâmico em língua portuguesa dedicado a Moçambique e aos países
     lusófonos. Artigos, vídeos e investigação sobre o Islão.')
 
 @section('content')
@@ -42,6 +43,21 @@
 
         $categories = Category::active()->forContentType('article')->ordered()->get()->keyBy('slug')->toArray();
 
+        $news = Article::visible()
+            ->where('type', 'news')
+            ->latest('published_at')
+            ->limit(5)
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'date' => $item->published_at->format('d \d\e F'),
+                    'title' => $item->title,
+                    'image' => $item->getFirstMediaUrl('featured_image') ?? 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?w=600&q=80',
+                ];
+            })
+            ->toArray();
+            
     @endphp
 
     <div class="min-h-screen bg-white">
@@ -52,82 +68,84 @@
         <x-home.category-bar :categories="$categories" />
 
         {{-- News Ticker --}}
-        <x-home.news-ticker />
+        <x-home.news-ticker :news="$news" />
 
         {{-- Latest Articles --}}
         @if ($latestArticles->isNotEmpty())
-        <section class="py-12 md:py-20">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6">
-                <div class="flex items-center justify-between mb-10">
-                    <div>
-                        <h2 class="text-2xl md:text-3xl font-bold text-[#1a1a1a]">Últimos Artigos</h2>
-                        <div class="w-16 h-1 bg-[#77c159] rounded-full mt-3"></div>
+            <section class="py-12 md:py-20">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6">
+                    <div class="flex items-center justify-between mb-10">
+                        <div>
+                            <h2 class="text-2xl md:text-3xl font-bold text-[#1a1a1a]">Últimos Artigos</h2>
+                            <div class="w-16 h-1 bg-[#77c159] rounded-full mt-3"></div>
+                        </div>
+                        <a href="{{ route('articles.type', ['type' => 'article']) }}"
+                            class="text-xs inline-flex items-center text-[#77c159] hover:text-[#5fa343] font-semibold transition-colors">
+                            Ver todos
+                            <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7">
+                                </path>
+                            </svg>
+                        </a>
                     </div>
-                    <a href="{{ route('articles.type', ['type' => 'article']) }}"
-                        class="text-xs inline-flex items-center text-[#77c159] hover:text-[#5fa343] font-semibold transition-colors">
-                        Ver todos
-                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                        </svg>
-                    </a>
-                </div>
 
-                @if ($latestArticles->isNotEmpty())
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        @foreach ($latestArticles as $index => $article)
-                            <div x-data="{ show: false }" x-init="setTimeout(() => show = true, {{ $index * 100 }})" x-show="show"
-                                x-transition:enter="transition ease-out duration-500"
-                                x-transition:enter-start="opacity-0 translate-y-4"
-                                x-transition:enter-end="opacity-100 translate-y-0">
-                                <x-home.article-card :article="$article" />
-                            </div>
-                        @endforeach
-                    </div>
-                @else
-                    <div class="text-center py-16 bg-gray-50 rounded-2xl">
-                        <p class="text-gray-500">Artigos em breve...</p>
-                    </div>
-                @endif
-            </div>
-        </section>
+                    @if ($latestArticles->isNotEmpty())
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            @foreach ($latestArticles as $index => $article)
+                                <div x-data="{ show: false }" x-init="setTimeout(() => show = true, {{ $index * 100 }})" x-show="show"
+                                    x-transition:enter="transition ease-out duration-500"
+                                    x-transition:enter-start="opacity-0 translate-y-4"
+                                    x-transition:enter-end="opacity-100 translate-y-0">
+                                    <x-home.article-card :article="$article" />
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="text-center py-16 bg-gray-50 rounded-2xl">
+                            <p class="text-gray-500">Artigos em breve...</p>
+                        </div>
+                    @endif
+                </div>
+            </section>
         @endif
 
         {{-- Videos Section --}}
         @if ($videos->isNotEmpty())
-        <section class="py-12 md:py-20 bg-[#f9fafb]">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6">
-                <div class="flex items-center justify-between mb-10">
-                    <div>
-                        <h2 class="text-2xl md:text-3xl font-bold text-[#1a1a1a]">Vídeos</h2>
-                        <div class="w-16 h-1 bg-[#77c159] rounded-full mt-3"></div>
+            <section class="py-12 md:py-20 bg-[#f9fafb]">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6">
+                    <div class="flex items-center justify-between mb-10">
+                        <div>
+                            <h2 class="text-2xl md:text-3xl font-bold text-[#1a1a1a]">Vídeos</h2>
+                            <div class="w-16 h-1 bg-[#77c159] rounded-full mt-3"></div>
+                        </div>
+                        <a href="{{ route('articles.type', ['type' => 'video']) }}"
+                            class="text-xs inline-flex items-center text-[#77c159] hover:text-[#5fa343] font-semibold transition-colors">
+                            Ver todos
+                            <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7">
+                                </path>
+                            </svg>
+                        </a>
                     </div>
-                    <a href="{{ route('articles.type', ['type' => 'video']) }}"
-                        class="text-xs inline-flex items-center text-[#77c159] hover:text-[#5fa343] font-semibold transition-colors">
-                        Ver todos
-                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                        </svg>
-                    </a>
-                </div>
 
-                @if ($videos->isNotEmpty())
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        @foreach ($videos as $index => $video)
-                            <div x-data="{ show: false }" x-init="setTimeout(() => show = true, {{ $index * 100 }})" x-show="show"
-                                x-transition:enter="transition ease-out duration-500"
-                                x-transition:enter-start="opacity-0 translate-y-4"
-                                x-transition:enter-end="opacity-100 translate-y-0">
-                                <x-home.video-card :video="$video" />
-                            </div>
-                        @endforeach
-                    </div>
-                @else
-                    <div class="text-center py-16 bg-white rounded-2xl">
-                        <p class="text-gray-500">Vídeos em breve...</p>
-                    </div>
-                @endif
-            </div>
-        </section>
+                    @if ($videos->isNotEmpty())
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                            @foreach ($videos as $index => $video)
+                                <div x-data="{ show: false }" x-init="setTimeout(() => show = true, {{ $index * 100 }})" x-show="show"
+                                    x-transition:enter="transition ease-out duration-500"
+                                    x-transition:enter-start="opacity-0 translate-y-4"
+                                    x-transition:enter-end="opacity-100 translate-y-0">
+                                    <x-home.video-card :video="$video" />
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="text-center py-16 bg-white rounded-2xl">
+                            <p class="text-gray-500">Vídeos em breve...</p>
+                        </div>
+                    @endif
+                </div>
+            </section>
         @endif
 
         {{-- Newspapers Section --}}

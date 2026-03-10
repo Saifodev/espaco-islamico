@@ -25,7 +25,7 @@
 
                     @can('view articles')
                         <x-nav-link :href="route('admin.articles.index')" :active="request()->routeIs('admin.articles.*')">
-                            {{ __('Artigos') }}
+                            {{ __('Conteúdo') }}
                         </x-nav-link>
                     @endcan
 
@@ -161,7 +161,7 @@
 
             @can('view articles')
                 <x-responsive-nav-link :href="route('admin.articles.index')" :active="request()->routeIs('admin.articles.*')">
-                    <i class="fas fa-newspaper mr-2"></i>{{ __('Artigos') }}
+                    <i class="fas fa-newspaper mr-2"></i>{{ __('Conteúdo') }}
                 </x-responsive-nav-link>
             @endcan
 
@@ -179,7 +179,7 @@
 
             @can('create articles')
                 <x-responsive-nav-link :href="route('admin.articles.index')" :active="request()->routeIs('admin.articles.*')">
-                    <i class="fas fa-newspaper mr-2"></i>{{ __('Artigos') }}
+                    <i class="fas fa-newspaper mr-2"></i>{{ __('Conteúdo') }}
                 </x-responsive-nav-link>
             @endcan
 

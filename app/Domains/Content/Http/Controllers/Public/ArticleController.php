@@ -23,11 +23,18 @@ class ArticleController extends Controller
         $category = $request->get('category', 'all');
         
         // Tipos válidos
-        $validTypes = ['article', 'video', 'newspaper'];
+        $validTypes = ['article', 'video', 'newspaper', 'news'];
         $type = $type && in_array($type, $validTypes) ? $type : null;
         
         // Títulos e descrições por tipo
         $typeData = [
+            'news' => [
+                'title' => 'Notícias',
+                'description' => 'Últimas notícias e atualizações sobre o Islão, a comunidade e a sociedade.',
+                'icon' => 'newspaper',
+                'empty_message' => 'Nenhuma notícia encontrada',
+                'empty_submessage' => 'Tente outra categoria ou pesquisa.'
+            ],
             'article' => [
                 'title' => 'Artigos',
                 'description' => 'Investigação, análises e reflexões sobre o Islão, a comunidade e a sociedade.',

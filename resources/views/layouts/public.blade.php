@@ -57,15 +57,14 @@
                 <span>Um espaço dedicado ao mundo Islâmico — Moçambique & PALOP</span>
                 <div class="hidden sm:flex items-center gap-4">
                     <a href="https://www.facebook.com/profile.php?id=61570540160741" target="_blank"
-                        rel="noopener noreferrer" class="hover:text-[var(--brand-green-dark)] transition-colors">
+                        rel="noopener noreferrer">
                         <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path fill-rule="evenodd"
                                 d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"
                                 clip-rule="evenodd"></path>
                         </svg>
                     </a>
-                    <a href="mailto:contato@espacoislamico.co.mz"
-                        class="hover:text-[var(--brand-green-dark)] transition-colors">
+                    <a href="mailto:info@espacoislamico.com">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
@@ -82,6 +81,7 @@
                 @php
                     $navLinks = [
                         ['label' => 'Início', 'route' => 'home'],
+                        ['label' => 'Notícias', 'route' => 'articles.type', 'type' => 'news'],
                         ['label' => 'Artigos', 'route' => 'articles.index', 'type' => 'article'],
                         ['label' => 'Vídeos', 'route' => 'articles.type', 'type' => 'video'],
                         ['label' => 'Jornais', 'route' => 'articles.type', 'type' => 'newspaper'],
@@ -239,7 +239,7 @@
                                 </a>
                             </li>
                             <li>
-                                <a href="mailto:contato@espacoislamico.co.mz"
+                                <a href="mailto:info@espacoislamico.com"
                                     class="hover:text-white transition-colors flex items-center gap-2">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

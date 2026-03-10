@@ -10,6 +10,7 @@ use App\Domains\Content\Enums\ContentStatus;
 use App\Domains\Content\Services\ArticleService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class ArticleTable extends Component
 {
@@ -103,8 +104,15 @@ class ArticleTable extends Component
     }
 
     // Ações individuais
+    public function testClick()
+    {
+        dd('Livewire click funcionou!');
+        // logger('LIVEWIRE CLICK FUNCIONOU');
+    }
+
     public function confirmAction(int $id, string $action)
     {
+        Log::debug("Confirmando ação '{$action}' para artigo ID {$id}");
         $this->selectedArticleId = $id;
         $this->actionType = $action;
         $this->confirmingAction = true;
@@ -317,7 +325,7 @@ class ArticleTable extends Component
             default => 'bg-gray-100 text-gray-800',
         };
     }
-    
+
     public function render()
     {
         $articles = $this->getQuery()->paginate(15);
@@ -345,6 +353,6 @@ class ArticleTable extends Component
                 $this->status !== null ||
                 $this->categoryId !== null ||
                 $this->authorId !== null,
-        ]);
+        ])->layout('layouts.admin');
     }
 }

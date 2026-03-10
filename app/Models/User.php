@@ -64,6 +64,11 @@ class User extends Authenticatable
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function articles()
+    {
+        return $this->hasMany(\App\Domains\Content\Models\Article::class, 'author_id');
+    }
+
     /**
      * Acessor para nome capitalizado
      */
