@@ -41,16 +41,17 @@
         // Últimas edições de jornais
         $newspapers = Article::visible()->where('type', 'newspaper')->latest('published_at')->limit(3)->get();
 
-        $categories = Category::active()->forContentType('article')->ordered()->get()->keyBy('slug')->toArray();
+        $categories = Category::active()->forContentType('news')->ordered()->get()->keyBy('slug')->toArray();
 
         $news = Article::visible()
             ->where('type', 'news')
             ->latest('published_at')
-            ->limit(5)
+            ->limit(7)
             ->get()
             ->map(function ($item) {
                 return [
                     'id' => $item->id,
+                    'slug' => $item->slug,
                     'date' => $item->published_at->format('d \d\e F'),
                     'title' => $item->title,
                     'image' => $item->getFirstMediaUrl('featured_image') ?? 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?w=600&q=80',

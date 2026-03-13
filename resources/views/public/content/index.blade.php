@@ -93,7 +93,7 @@
             </div>
 
             {{-- Filters / Categories --}}
-            @if (count($categories) > 0 && $type !== 'newspaper')
+            @if (count($categories) > 0 && !in_array($type, ['article', 'newspaper']))
                 <div class="border-b border-gray-100 sticky top-16 md:top-20 bg-white/95 backdrop-blur-md z-30">
                     <div class="max-w-7xl mx-auto px-4 sm:px-6">
                         <div class="flex items-center gap-2 py-4 overflow-x-auto scrollbar-hide">

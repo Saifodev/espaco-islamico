@@ -38,6 +38,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'archive articles',
             'restore articles',
             'force delete articles',
+            'moderate comments',
 
             // newsletter
             'manage newsletters',
@@ -79,6 +80,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'archive articles',
             'restore articles',
             'force delete articles',
+            'moderate comments',
 
             'manage newsletters',
 

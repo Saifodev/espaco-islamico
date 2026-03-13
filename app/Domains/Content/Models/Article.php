@@ -32,12 +32,22 @@ class Article extends Model implements HasMedia
         'content',
         'youtube_url',
         'edition',
+
         'status',
         'published_at',
         'author_id',
+
+        // Venda
+        'is_sellable',
+        'price',
+        'whatsapp_number',
+
+        // SEO
         'seo_title',
         'seo_description',
         'seo_keywords',
+
+        // Metadata
         'reading_time',
         'views_count',
     ];
@@ -45,20 +55,40 @@ class Article extends Model implements HasMedia
     protected $casts = [
         'type' => ContentType::class,
         'status' => ContentStatus::class,
+
         'published_at' => 'datetime',
+
+        'is_sellable' => 'boolean',
+        'price' => 'decimal:2',
+
+        'reading_time' => 'integer',
+        'views_count' => 'integer',
     ];
 
     protected $attributes = [
         'type' => 'article',
         'status' => 'draft',
+
+        'is_sellable' => false,
         'views_count' => 0,
     ];
 
     protected $with = ['media'];
-    
-    protected $appends = ['category', 'type_label', 'status_label'];
 
-    // Relationships
+    protected $appends = [
+        'category',
+        'type_label',
+        'status_label',
+        'is_published',
+        'whatsapp_link',
+    ];
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
+
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'author_id');
@@ -81,11 +111,21 @@ class Article extends Model implements HasMedia
         return $this->morphMany(Comment::class, 'commentable');
     }
 
-    // Scopes
+    /*
+    |--------------------------------------------------------------------------
+    | Scopes
+    |--------------------------------------------------------------------------
+    */
+
     public function scopePublished($query)
     {
         return $query->where('status', ContentStatus::PUBLISHED)
             ->where('published_at', '<=', now());
+    }
+
+    public function scopeSellable($query)
+    {
+        return $query->where('is_sellable', true);
     }
 
     public function scopeOfType($query, ContentType|string $type)
@@ -93,123 +133,6 @@ class Article extends Model implements HasMedia
         return $query->where('type', $type instanceof ContentType ? $type->value : $type);
     }
 
-    // Accessors
-    public function getUrlAttribute(): string
-    {
-        return route('articles.show', [$this->type, $this->slug]);
-    }
-
-    public function getTypeLabelAttribute(): string
-    {
-        return $this->type->label();
-    }
-
-    public function getStatusLabelAttribute(): string
-    {
-        return $this->status->label();
-    }
-
-    public function getReadingTimeInMinutesAttribute(): string
-    {
-        if ($this->reading_time) {
-            return $this->reading_time . ' min';
-        }
-
-        if ($this->type === ContentType::ARTICLE && $this->content) {
-            $wordCount = str_word_count(strip_tags($this->content));
-            $minutes = max(1, ceil($wordCount / 200));
-            return $minutes . ' min';
-        }
-
-        return '1 min';
-    }
-
-    public function getCategoryAttribute(): ?string
-    {
-        return $this->categories()->first()?->name;
-    }
-
-    // YouTube helpers
-    public function getYouTubeIdAttribute(): ?string
-    {
-        if (!$this->youtube_url) {
-            return null;
-        }
-
-        preg_match('/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/', $this->youtube_url, $matches);
-        
-        return $matches[1] ?? null;
-    }
-
-    public function getYouTubeThumbnailAttribute(): ?string
-    {
-        return $this->youtube_id 
-            ? "https://img.youtube.com/vi/{$this->youtube_id}/maxresdefault.jpg"
-            : null;
-    }
-
-    // Validação para publicação
-    public function canBePublished(): bool
-    {
-        $requirements = $this->type->mediaRequirements();
-        
-        // Verificar imagem de destaque se required
-        if ($requirements['featured_image'] === 'required' && !$this->hasFeaturedImage()) {
-            return false;
-        }
-        
-        // Verificar PDF para jornal
-        if ($this->type === ContentType::NEWSPAPER && 
-            $requirements['pdf'] === 'required' && 
-            !$this->hasMedia('pdf')) {
-            return false;
-        }
-        
-        // Verificar YouTube URL para vídeo
-        if ($this->type === ContentType::VIDEO && !$this->youtube_url) {
-            return false;
-        }
-        
-        return true;
-    }
-
-    public function getPublishErrors(): array
-    {
-        $errors = [];
-        $requirements = $this->type->mediaRequirements();
-        
-        if ($requirements['featured_image'] === 'required' && !$this->hasFeaturedImage()) {
-            $errors[] = 'Imagem de destaque é obrigatória';
-        }
-        
-        if ($this->type === ContentType::NEWSPAPER) {
-            if ($requirements['pdf'] === 'required' && !$this->hasMedia('pdf')) {
-                $errors[] = 'Arquivo PDF da edição é obrigatório';
-            }
-            if (!$this->edition) {
-                $errors[] = 'Número da edição é obrigatório';
-            }
-        }
-        
-        if ($this->type === ContentType::VIDEO && !$this->youtube_url) {
-            $errors[] = 'URL do YouTube é obrigatória';
-        }
-        
-        if ($this->type === ContentType::ARTICLE && !$this->content) {
-            $errors[] = 'Conteúdo do artigo é obrigatório';
-        }
-        
-        return $errors;
-    }
-
-    /* aaaaaaaaa */
-    public function approvedComments()
-    {
-        return $this->morphMany(Comment::class, 'commentable')
-            ->where('status', Comment::STATUS_APPROVED);
-    }
-
-    // Scopes...
     public function scopeDraft($query)
     {
         return $query->where('status', ContentStatus::DRAFT);
@@ -268,26 +191,36 @@ class Article extends Model implements HasMedia
         return $query->where('type', $type);
     }
 
-    // Accessors...
+    /*
+    |--------------------------------------------------------------------------
+    | Accessors
+    |--------------------------------------------------------------------------
+    */
+
+    public function getUrlAttribute(): string
+    {
+        return route('articles.show', [$this->type, $this->slug]);
+    }
+
+    public function getTypeLabelAttribute(): string
+    {
+        return $this->type->label();
+    }
+
+    public function getStatusLabelAttribute(): string
+    {
+        return $this->status->label();
+    }
+
     public function getIsPublishedAttribute(): bool
     {
         return $this->status === ContentStatus::PUBLISHED &&
             $this->published_at?->lte(now());
     }
 
-    public function getIsScheduledAttribute(): bool
+    public function getCategoryAttribute(): ?string
     {
-        return $this->status === ContentStatus::SCHEDULED;
-    }
-
-    public function getIsDraftAttribute(): bool
-    {
-        return $this->status === ContentStatus::DRAFT;
-    }
-
-    public function getIsArchivedAttribute(): bool
-    {
-        return $this->status === ContentStatus::ARCHIVED;
+        return $this->categories()->first()?->name;
     }
 
     public function getExcerptOrFallbackAttribute(): string
@@ -299,48 +232,114 @@ class Article extends Model implements HasMedia
         return substr(strip_tags($this->content), 0, 200) . '...';
     }
 
-    // Accessors para mídia
-    public function getFeaturedImageThumbAttribute(): ?string
+    /*
+    |--------------------------------------------------------------------------
+    | Venda
+    |--------------------------------------------------------------------------
+    */
+
+    public function getIsPaidAttribute(): bool
     {
-        return $this->getFeaturedImageUrl('thumb');
+        return $this->is_sellable && $this->price > 0;
     }
 
-    public function getFeaturedImagePreviewAttribute(): ?string
+    public function getFormattedPriceAttribute(): ?string
     {
-        return $this->getFeaturedImageUrl('preview');
+        if (!$this->price) {
+            return null;
+        }
+
+        return number_format($this->price, 2, ',', '.') . ' MZN';
     }
 
-    public function getFeaturedImageLargeAttribute(): ?string
+    public function getWhatsappLinkAttribute(): ?string
     {
-        return $this->getFeaturedImageUrl('large');
+        if (!$this->whatsapp_number) {
+            return null;
+        }
+
+        // Garantir que o número tenha apenas dígitos
+        $number = preg_replace('/\D+/', '', $this->whatsapp_number);
+
+        if (!$number) {
+            return null;
+        }
+
+        $edition = $this->edition ? " ({$this->edition})" : '';
+
+        $message = rawurlencode(
+            "Olá, tenho interesse no jornal: {$this->title}{$edition}. Gostaria de saber mais detalhes sobre a compra."
+        );
+
+        return "https://wa.me/{$number}?text={$message}";
     }
 
-    public function getGalleryThumbsAttribute(): array
+    /*
+    |--------------------------------------------------------------------------
+    | YouTube Helpers
+    |--------------------------------------------------------------------------
+    */
+
+    public function getYouTubeIdAttribute(): ?string
     {
-        return $this->getGalleryUrls('thumb');
+        if (!$this->youtube_url) {
+            return null;
+        }
+
+        preg_match('/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/', $this->youtube_url, $matches);
+
+        return $matches[1] ?? null;
     }
 
-    public function getGalleryPreviewsAttribute(): array
+    public function getYouTubeThumbnailAttribute(): ?string
     {
-        return $this->getGalleryUrls('preview');
+        return $this->youtube_id
+            ? "https://img.youtube.com/vi/{$this->youtube_id}/maxresdefault.jpg"
+            : null;
     }
 
-    // Mutators
+    /*
+    |--------------------------------------------------------------------------
+    | Reading Time
+    |--------------------------------------------------------------------------
+    */
+
+    public function getReadingTimeInMinutesAttribute(): string
+    {
+        if ($this->reading_time) {
+            return $this->reading_time . ' min';
+        }
+
+        if ($this->type === ContentType::ARTICLE && $this->content) {
+            $wordCount = str_word_count(strip_tags($this->content));
+            $minutes = max(1, ceil($wordCount / 200));
+            return $minutes . ' min';
+        }
+
+        return '1 min';
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Mutators
+    |--------------------------------------------------------------------------
+    */
+
     public function setSlugAttribute($value)
     {
         $this->attributes['slug'] = $value ?: str($this->title)->slug();
     }
 
-    // Helpers existentes...
+    /*
+    |--------------------------------------------------------------------------
+    | Permissions
+    |--------------------------------------------------------------------------
+    */
+
     public function canBeEditedBy(User $user): bool
     {
-        if ($user->hasRole('admin')) {
-            return true;
-        }
-
-        if ($user->hasRole('editor')) {
-            return true;
-        }
+        if ($user->hasRole('admin')) return true;
+        if ($user->hasRole('editor')) return true;
 
         if ($user->hasRole('author')) {
             return $this->author_id === $user->id;
@@ -351,28 +350,26 @@ class Article extends Model implements HasMedia
 
     public function canBeDeletedBy(User $user): bool
     {
-        if ($user->hasRole('admin')) {
-            return true;
-        }
-
-        if ($user->hasRole('editor')) {
-            return false;
-        }
+        if ($user->hasRole('admin')) return true;
 
         if ($user->hasRole('author')) {
-            return $this->author_id === $user->id && $this->isDraft;
+            return $this->author_id === $user->id && $this->status === ContentStatus::DRAFT;
         }
 
         return false;
     }
 
-    // Boot do modelo
+    /*
+    |--------------------------------------------------------------------------
+    | Boot
+    |--------------------------------------------------------------------------
+    */
+
     protected static function booted()
     {
         static::deleting(function (Article $article) {
-            // As mídias serão deletadas automaticamente pela MediaLibrary
-            // devido à configuração 'delete_media_on_model_deletion' => true
-            logger()->info('Artigo sendo deletado, mídias serão removidas', [
+
+            logger()->info('Artigo sendo deletado', [
                 'article_id' => $article->id,
                 'title' => $article->title,
             ]);

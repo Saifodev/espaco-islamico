@@ -15,7 +15,7 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Fé',
                 'description' => 'Notícias e artigos sobre fé.',
-                'belongs_to' => 'article',
+                'belongs_to' => 'news',
                 'icon' => 'sparkles',
                 'color' => '#3B82F6',
                 'children' => []
@@ -23,15 +23,15 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Sharia',
                 'description' => 'Legislação islâmica e jurisprudência.',
-                'belongs_to' => 'article',
-                'icone' => 'scale',
+                'belongs_to' => 'news',
+                'icon' => 'scale',
                 'color' => '#10B981',
                 'children' => []
             ],
             [
                 'name' => 'História',
                 'description' => 'Eventos históricos, biografias e análises.',
-                'belongs_to' => 'article',
+                'belongs_to' => 'news',
                 'icon' => 'landmark',
                 'color' => '#F59E0B',
                 'children' => []
@@ -39,7 +39,7 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Família',
                 'description' => 'Assuntos relacionados à família e relacionamentos.',
-                'belongs_to' => 'article',
+                'belongs_to' => 'news',
                 'icon' => 'heart',
                 'color' => '#EC4899',
                 'children' => []
@@ -47,7 +47,7 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Ciência',
                 'description' => 'Descobertas científicas, avanços tecnológicos e relação com o islam',
-                'belongs_to' => 'article',
+                'belongs_to' => 'news',
                 'icon' => 'atom',
                 'color' => '#06B6D4',
                 'children' => []
@@ -55,7 +55,7 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Sociedade',
                 'description' => 'Questões sociais, cultura e atualidades.',
-                'belongs_to' => 'article',
+                'belongs_to' => 'news',
                 'icon' => 'users',
                 'color' => '#F97316',
                 'children' => []
@@ -63,7 +63,7 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Educação',
                 'description' => 'Métodos educacionais, escolas e aprendizado.',
-                'belongs_to' => 'article',
+                'belongs_to' => 'news',
                 'icon' => 'graduation-cap',
                 'color' => '#10B981',
                 'children' => []
@@ -71,7 +71,7 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Ramadan',
                 'description' => 'Tradições, receitas e eventos relacionados ao Ramadan.',
-                'belongs_to' => 'article',
+                'belongs_to' => 'news',
                 'icon' => 'moon',
                 'color' => '#22C55E',
                 'children' => []
@@ -79,7 +79,7 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Juventude',
                 'description' => 'Assuntos voltados para jovens muçulmanos.',
-                'belongs_to' => 'article',
+                'belongs_to' => 'news',
                 'icon' => 'book-open',
                 'color' => '#F43F5E',
                 'children' => []

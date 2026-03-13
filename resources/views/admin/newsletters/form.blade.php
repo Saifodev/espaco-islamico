@@ -136,6 +136,7 @@
         <script>
             tinymce.init({
                 selector: '.tinymce',
+                license_key: 'gpl',
                 height: 500,
                 menubar: false,
                 plugins: [
@@ -143,7 +144,12 @@
                     'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
                     'insertdatetime', 'media', 'table', 'help', 'wordcount'
                 ],
-                toolbar: 'undo redo | blocks | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help',
+                toolbar: 'undo redo | blocks | bold italic backcolor | image | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | fullscreen',
+                // tinydrive_token_provider: (success, failure) => {
+                //     success({
+                //         token: "{{ env('TINYDRIVE_TOKEN_PROVIDER_KEY') }}"
+                //     });
+                // },
                 content_style: 'body { font-family:Figtree,Helvetica,Arial,sans-serif; font-size:16px; line-height:1.6; color:#333; }',
                 mobile: {
                     menubar: true,

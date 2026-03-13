@@ -13,12 +13,16 @@ return new class extends Migration
             $table->string('title');
             $table->string('slug')->unique();
             $table->text('excerpt')->nullable();
-            $table->longText('content')->nullable();
+            $table->longText('content')->nullable(); // Html
             $table->string('youtube_url')->nullable(); // Para vídeos, se necessário
             $table->string('edition')->nullable(); // Para edições de jornais, se necessário
             $table->string('status')->default('draft');
             $table->timestamp('published_at')->nullable();
             $table->foreignId('author_id')->constrained('users');
+            
+            $table->boolean('is_sellable')->default(false); // flag para indicar se o artigo é vendável
+            $table->decimal('price', 8, 2)->nullable(); // preço do artigo, se for vendável
+            $table->string('whatsapp_number')->nullable(); // número de whatsapp para redirecionamento
             
             // SEO fields
             $table->string('seo_title')->nullable();

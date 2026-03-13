@@ -54,7 +54,7 @@
         {{-- Top Bar --}}
         <div class="bg-[#5fa343] text-white/80 text-xs py-2 px-4">
             <div class="max-w-7xl mx-auto flex justify-between items-center">
-                <span>Um espaço dedicado ao mundo Islâmico — Moçambique & PALOP</span>
+                <span>Um espaço dedicado ao mundo Islâmico</span>
                 <div class="hidden sm:flex items-center gap-4">
                     <a href="https://www.facebook.com/profile.php?id=61570540160741" target="_blank"
                         rel="noopener noreferrer">

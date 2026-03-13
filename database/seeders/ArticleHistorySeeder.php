@@ -185,6 +185,18 @@ class ArticleHistorySeeder extends Seeder
         $edition = null;
         if ($type === ContentType::NEWSPAPER) {
             $edition = "Edição de " . $publishedAt->format('d/m/Y');
+            // chances de ser vendável para jornais = 50%
+            $isSellable = rand(0, 1) === 1;
+
+            if ($isSellable) {
+                $is_sellable = true;
+                $price = rand(1000, 5000) / 100; // Preço entre 10.00 e 50.00
+                $whatsappNumber = "820283546"; // Número de WhatsApp para redirecionamento
+            } else {
+                $is_sellable = false;
+                $price = null;
+                $whatsappNumber = null;
+            }
         }
 
         $article = Article::create([
@@ -197,6 +209,9 @@ class ArticleHistorySeeder extends Seeder
             'status' => ContentStatus::PUBLISHED,
             'published_at' => $publishedAt,
             'author_id' => $authorId,
+            'is_sellable' => $is_sellable ?? false,
+            'price' => $price ?? null,
+            'whatsapp_number' => $whatsappNumber ?? null,
             'reading_time' => rand(2, 15),
             'views_count' => $this->calculateViewsByAge($publishedAt),
             'youtube_url' => $type === ContentType::VIDEO ? $this->random($this->youtube) : null,

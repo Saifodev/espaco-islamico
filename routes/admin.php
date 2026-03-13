@@ -31,71 +31,90 @@ Route::post('/users/{user}/reset-password', [UserController::class, 'resetPasswo
 Route::group([], function () {
     Route::middleware(['can:access admin panel'])->group(function () {
         Route::prefix('articles')->name('articles.')->group(function () {
-            Route::get('/', ArticleTable::class)->name('index');
-            Route::get('/create', ArticleForm::class)->name('create');
-            Route::get('/{article}/edit', ArticleForm::class)->name('edit');
-            Route::get('/{article}', ArticleShow::class)->name('show');
-            
+            Route::get('/', [App\Domains\Content\Http\Controllers\Admin\ArticleController::class, 'index'])->name('index');
+            Route::get('/create', [App\Domains\Content\Http\Controllers\Admin\ArticleController::class, 'create'])->name('create');
+            Route::post('/', [App\Domains\Content\Http\Controllers\Admin\ArticleController::class, 'store'])->name('store');
+            Route::get('/{article}', [App\Domains\Content\Http\Controllers\Admin\ArticleController::class, 'show'])->name('show');
+            Route::get('/{article}/edit', [App\Domains\Content\Http\Controllers\Admin\ArticleController::class, 'edit'])->name('edit');
+            Route::put('/{article}', [App\Domains\Content\Http\Controllers\Admin\ArticleController::class, 'update'])->name('update');
+            Route::delete('/{article}', [App\Domains\Content\Http\Controllers\Admin\ArticleController::class, 'destroy'])->name('destroy');
+
             // Ações adicionais
-            Route::post('/{article}/publish', [ArticleController::class, 'publish'])
-                ->name('articles.publish');
-            Route::post('/{article}/archive', [ArticleController::class, 'archive'])
-                ->name('articles.archive');
-            Route::delete('/{article}', [ArticleController::class, 'destroy'])
-                ->name('articles.destroy');
+            Route::post('/{article}/publish', [App\Domains\Content\Http\Controllers\Admin\ArticleController::class, 'publish'])->name('publish');
+            Route::post('/{article}/archive', [App\Domains\Content\Http\Controllers\Admin\ArticleController::class, 'archive'])->name('archive');
+            Route::post('/{article}/restore', [App\Domains\Content\Http\Controllers\Admin\ArticleController::class, 'restore'])->name('restore');
+
+            // Comentários
+            Route::prefix('/{article}/comments')->name('comments.')->group(function () {
+                Route::post('/{comment}/approve', [App\Domains\Content\Http\Controllers\Admin\CommentController::class, 'approve'])->name('approve');
+                Route::post('/{comment}/spam', [App\Domains\Content\Http\Controllers\Admin\CommentController::class, 'markAsSpam'])->name('spam');
+                Route::delete('/{comment}', [App\Domains\Content\Http\Controllers\Admin\CommentController::class, 'destroy'])->name('destroy');
+                Route::post('/bulk', [App\Domains\Content\Http\Controllers\Admin\CommentController::class, 'bulkAction'])->name('bulk');
+            });
         });
     });
 });
 
 // Newsletter routes
 Route::prefix('newsletters')->name('newsletters.')->group(function () {
-    Route::get('/subscribers', 
+    Route::get(
+        '/subscribers',
         [\App\Http\Controllers\Admin\NewsletterController::class, 'subscribers']
     )->name('subscribers');
 
-    Route::get('/subscribers/export', 
+    Route::get(
+        '/subscribers/export',
         [\App\Http\Controllers\Admin\NewsletterController::class, 'exportSubscribers']
     )->name('subscribers.export');
 
-    Route::delete('/subscribers/{subscriber}', 
+    Route::delete(
+        '/subscribers/{subscriber}',
         [\App\Http\Controllers\Admin\NewsletterController::class, 'destroySubscriber']
     )->whereNumber('subscriber')
-     ->name('subscribers.destroy');
+        ->name('subscribers.destroy');
 
-    Route::get('/', 
+    Route::get(
+        '/',
         [\App\Http\Controllers\Admin\NewsletterController::class, 'index']
     )->name('index');
 
-    Route::get('/create', 
+    Route::get(
+        '/create',
         [\App\Http\Controllers\Admin\NewsletterController::class, 'create']
     )->name('create');
 
-    Route::post('/', 
+    Route::post(
+        '/',
         [\App\Http\Controllers\Admin\NewsletterController::class, 'store']
     )->name('store');
 
-    Route::get('/{newsletter}', 
+    Route::get(
+        '/{newsletter}',
         [\App\Http\Controllers\Admin\NewsletterController::class, 'show']
     )->whereNumber('newsletter')
-     ->name('show');
+        ->name('show');
 
-    Route::get('/{newsletter}/edit', 
+    Route::get(
+        '/{newsletter}/edit',
         [\App\Http\Controllers\Admin\NewsletterController::class, 'edit']
     )->whereNumber('newsletter')
-     ->name('edit');
+        ->name('edit');
 
-    Route::put('/{newsletter}', 
+    Route::put(
+        '/{newsletter}',
         [\App\Http\Controllers\Admin\NewsletterController::class, 'update']
     )->whereNumber('newsletter')
-     ->name('update');
+        ->name('update');
 
-    Route::delete('/{newsletter}', 
+    Route::delete(
+        '/{newsletter}',
         [\App\Http\Controllers\Admin\NewsletterController::class, 'destroy']
     )->whereNumber('newsletter')
-     ->name('destroy');
+        ->name('destroy');
 
-    Route::post('/{newsletter}/send', 
+    Route::post(
+        '/{newsletter}/send',
         [\App\Http\Controllers\Admin\NewsletterController::class, 'send']
     )->whereNumber('newsletter')
-     ->name('send');
+        ->name('send');
 });

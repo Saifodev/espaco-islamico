@@ -20,27 +20,29 @@
         ($item->cover_image ?? 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?w=600&q=80');
 @endphp
 
-<div
-    x-data="{ show: false }"
-    x-init="setTimeout(() => show = true, {{ $index * 50 }})"
+<div x-data="{ show: false }" x-init="setTimeout(() => show = true, {{ $index * 50 }})"
     :class="show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'"
-    @if ($type === 'video')
-        @click="$dispatch('video-selected', {
-            id: {{ $item->id }},
-            title: @js($item->title),
-            youtube_url: @js($item->youtube_url),
-            description: @js($item->excerpt)
-        })"
-    @elseif($type === 'newspaper')
-        @click="$dispatch('open-magazine', {
-            id: {{ $item->id }},
-            title: @js($item->title),
-            edition: @js($item->edition),
-            pdf_url: @js($item->getFirstMediaUrl('documents'))
-        })"
-    @else
-        onclick="window.location.href='{{ route('articles.show', [$item->type, $item->slug]) }}'"
-    @endif
+    @click="
+        @if ($type === 'video')
+            $dispatch('video-selected', {
+                id: {{ $item->id }},
+                title: @js($item->title),
+                youtube_url: @js($item->youtube_url),
+                description: @js($item->excerpt)
+            })
+        @elseif($type === 'newspaper')
+        @if (!$item->is_sellable)
+        $dispatch('open-magazine', {
+                    id: {{ $item->id }},
+                    title: @js($item->title),
+                    edition: @js($item->edition),
+                    pdf_url: @js($item->getFirstMediaUrl('documents'))
+                })
+        @endif
+        @else
+        window.location.href='{{ route('articles.show', [$item->type, $item->slug]) }}'
+        @endif
+    "
     class="group cursor-pointer h-full w-full transition-all duration-300">
 
     @if ($type === 'newspaper')
@@ -69,13 +71,21 @@
                 </span>
             @endif
 
-            <div
-                class="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center">
-                <div
-                    class="opacity-0 group-hover:opacity-100 transition-opacity bg-[#77c159] text-white text-xs font-semibold px-4 py-2 rounded-full">
-                    Ler Agora
+            @if ($item->is_sellable)
+                <div class="absolute inset-0 flex items-center justify-center transition-all duration-300">
+                    <a href="{{ $item->whatsapp_link }}" target="_blank" @click.stop
+                        class="opacity-0 group-hover:opacity-100 transition-opacity bg-[#77c159] text-white text-xs font-semibold px-4 py-2 rounded-full group-hover:bg-opacity-100 bg-opacity-0">
+                        Comprar por {{ number_format($item->price, 2, ',', '.') }} MT
+                    </a>
                 </div>
-            </div>
+            @else
+                <div class="absolute inset-0 flex items-center justify-center transition-all duration-300">
+                    <div
+                        class="opacity-0 group-hover:opacity-100 transition-opacity bg-[#77c159] text-white text-xs font-semibold px-4 py-2 rounded-full group-hover:bg-opacity-100 bg-opacity-0">
+                        Ler Agora
+                    </div>
+                </div>
+            @endif
 
             {{-- @if ($item->edition)
                 <span

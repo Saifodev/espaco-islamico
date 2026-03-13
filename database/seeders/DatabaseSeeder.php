@@ -36,9 +36,9 @@ class DatabaseSeeder extends Seeder
             TagSeeder::class,
             
             // Depois conteúdo histórico
-            // ArticleHistorySeeder::class => ['months' => $this->historyMonths],
-            // NewsletterHistorySeeder::class => ['months' => $this->historyMonths],
-            // CommentsHistorySeeder::class => ['months' => $this->historyMonths],
+            ArticleHistorySeeder::class => ['months' => $this->historyMonths],
+            NewsletterHistorySeeder::class => ['months' => $this->historyMonths],
+            CommentsHistorySeeder::class => ['months' => $this->historyMonths],
         ];
 
         foreach ($seeders as $seeder => $params) {
