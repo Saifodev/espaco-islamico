@@ -26,6 +26,8 @@ Clonar projecto:
     git clone URL_DO_REPOSITORIO espaco-islamico
     cd espaco-islamico
 
+    cd domains/espacoislamico.com/espaco-islamico
+
 ------------------------------------------------------------------------
 
 # Instalar dependências

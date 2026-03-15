@@ -10,7 +10,7 @@
                     <div>
                         <h1 class="text-3xl font-serif font-semibold text-gray-800">
                             {{ isset($article) ? 'Editar' : 'Novo' }}
-                            {{ ucfirst(old('type', $article->type->value ?? 'article')) }}
+                            {{ ucfirst(old('type', $article->type->value ?? 'news')) }}
                         </h1>
                         <p class="text-sm text-gray-600 mt-1">
                             Preencha os campos abaixo para {{ isset($article) ? 'atualizar' : 'criar' }} o conteúdo
@@ -56,7 +56,7 @@
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-500 transition-colors @if (isset($article)) bg-gray-100 cursor-not-allowed @endif">
                                     @foreach ($contentTypes as $typeOption)
                                         <option value="{{ $typeOption['value'] }}"
-                                            {{ old('type', $article->type->value ?? 'article') == $typeOption['value'] ? 'selected' : '' }}>
+                                            {{ old('type', $article->type->value ?? 'news') == $typeOption['value'] ? 'selected' : '' }}>
                                             {{ $typeOption['label'] }}
                                         </option>
                                     @endforeach
@@ -158,13 +158,14 @@
                             </div>
 
                             {{-- Preço e WhatsApp --}}
-                            <div x-show="type === 'newspaper' && is_sellable" x-cloak class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div x-show="type === 'newspaper' && is_sellable" x-cloak
+                                class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label for="price" class="block text-sm font-medium text-gray-700 mb-2">
                                         Preço (MT) <span class="text-red-500">*</span>
                                     </label>
-                                    <input type="number" name="price" id="price" step="0.01" min="0"
-                                        value="{{ old('price', $article->price ?? '') }}"
+                                    <input type="number" name="price" id="price" step="0.01"
+                                        min="0" value="{{ old('price', $article->price ?? '') }}"
                                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-500 transition-colors @error('price') border-red-500 @enderror"
                                         placeholder="Ex: 49.90">
                                     @error('price')
@@ -188,7 +189,7 @@
                             {{-- Resumo --}}
                             <div>
                                 <label for="excerpt" class="block text-sm font-medium text-gray-700 mb-2">
-                                    {{ old('type', $article->type->value ?? 'article') === 'article' ? 'Resumo' : 'Descrição' }}
+                                    {{ old('type', $article->type->value ?? 'news') === 'article' ? 'Resumo' : 'Descrição' }}
                                 </label>
                                 <textarea name="excerpt" id="excerpt" rows="3"
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-200 focus:border-green-500 transition-colors @error('excerpt') border-red-500 @enderror"
@@ -368,17 +369,20 @@
                     <div class="p-6">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {{-- Categorias --}}
-                            <div x-show="type !== 'news'" x-cloak>
+                            <div x-show="!['article', 'newspaper'].includes(type)" x-cloak>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
                                     Categorias
                                 </label>
                                 <div class="space-y-2 max-h-60 overflow-y-auto p-3 border border-gray-200 rounded-lg">
                                     @foreach ($categories as $category)
-                                        <div class="flex items-center">
+                                        <div class="flex items-center"
+                                            x-show="type === '{{ $category->belongs_to }}'">
+
                                             <input type="checkbox" name="categories[]" value="{{ $category->id }}"
                                                 id="category_{{ $category->id }}"
                                                 {{ in_array($category->id, old('categories', $article?->categories?->pluck('id')->toArray() ?? [])) ? 'checked' : '' }}
                                                 class="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-200">
+
                                             <label for="category_{{ $category->id }}"
                                                 class="ml-3 text-sm text-gray-700">
                                                 {{ $category->name }}
@@ -487,7 +491,7 @@
                 return {
                     preview: null,
                     pdfName: null,
-                    type: '{{ old('type', $article->type->value ?? 'article') }}',
+                    type: '{{ old('type', $article->type->value ?? 'news') }}',
                     title: '{{ old('title', $article->title ?? '') }}',
                     slug: '{{ old('slug', $article->slug ?? '') }}',
                     status: '{{ old('status', $article->status->value ?? 'draft') }}',
