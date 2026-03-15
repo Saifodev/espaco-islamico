@@ -138,7 +138,7 @@
                                     Disponível para Venda?
                                 </label>
                                 <div class="flex items-center space-x-6">
-                                    <div class="flex items-center">
+                                    <div class="flex items-center mr-4">
                                         <input type="radio" name="is_sellable" id="sellable_yes" value="1"
                                             {{ old('is_sellable', $article->is_sellable ?? false) ? 'checked' : '' }}
                                             class="h-4 w-4 text-green-600 border-gray-300 focus:ring-green-500">

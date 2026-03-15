@@ -5,7 +5,7 @@
 ])
 
 @php
-    $defaultImage = 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?w=800&q=80';
+    $defaultImage = asset('placeholder.png');
 @endphp
 
 <section

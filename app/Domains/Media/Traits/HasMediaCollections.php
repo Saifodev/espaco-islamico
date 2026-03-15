@@ -9,11 +9,13 @@ trait HasMediaCollections
 {
     public function registerMediaCollections(): void
     {
+        $fallbackImagePath = asset('placeholder.png');
+
         $this->addMediaCollection(MediaCollectionType::FEATURED_IMAGE->value)
             ->singleFile()
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
-            ->useFallbackUrl('/images/fallback-article.jpg')
-            ->useFallbackPath(public_path('/images/fallback-article.jpg'));
+            ->useFallbackUrl($fallbackImagePath)
+            ->useFallbackPath($fallbackImagePath);
 
         $this->addMediaCollection(MediaCollectionType::GALLERY->value)
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);

@@ -16,8 +16,7 @@
     ];
 
     $imageUrl =
-        $item->getFirstMediaUrl('featured_image') ??
-        ($item->cover_image ?? 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?w=600&q=80');
+        $item->getFirstMediaUrl('featured_image') ?? asset('placeholder.png');
 @endphp
 
 <div x-data="{ show: false }" x-init="setTimeout(() => show = true, {{ $index * 50 }})"
@@ -175,7 +174,7 @@
                 </h3>
 
                 <p class="text-gray-500 text-sm leading-relaxed line-clamp-2 mb-4">
-                    {{ $item->excerpt_or_fallback }}
+                    {!! $item->excerpt_or_fallback !!}
                 </p>
 
                 @if ($item->published_at && $item->author)

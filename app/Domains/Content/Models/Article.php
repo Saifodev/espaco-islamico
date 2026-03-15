@@ -13,6 +13,7 @@ use App\Domains\Media\Traits\HasMediaCollections;
 use App\Models\User;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use Illuminate\Support\Facades\Log;
 
 class Article extends Model implements HasMedia
 {
@@ -357,6 +358,36 @@ class Article extends Model implements HasMedia
         }
 
         return false;
+    }
+
+    public function canBePublished(): bool
+    {
+        if (!$this->title) {
+            return false;
+        }
+
+        if ($this->type === ContentType::ARTICLE && !$this->content) {
+            return false;
+        }
+
+        if ($this->type === ContentType::VIDEO && !$this->youtube_url) {
+            return false;
+        }
+
+        if ($this->type === ContentType::NEWSPAPER) {
+            if (!$this->getFirstMediaUrl('documents')) {
+                Log::warning('Jornal sem PDF', ['article_id' => $this->id]);
+                return false;
+            }
+        }
+
+        if ($this->is_sellable) {
+            if (!$this->price || !$this->whatsapp_number) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /*

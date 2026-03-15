@@ -15,8 +15,7 @@
         'Juventude' => 'bg-rose-50 text-rose-700 border-rose-200',
     ];
 
-    $imageUrl = $article->getFirstMediaUrl('featured_image') 
-        ?? 'https://images.unsplash.com/photo-1542816417-0983c9c9ad53?w=600&q=80';
+    $imageUrl = $article->getFirstMediaUrl('featured_image') ?? asset('placeholder.png');
 @endphp
 
 <div

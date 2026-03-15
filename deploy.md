@@ -1,93 +1,77 @@
-# Guia Completo de Deploy --- Laravel + Livewire (cPanel / Shared Hosting)
+# Guia de Deploy --- Laravel + Livewire
 
-Este guia mostra como hospedar, atualizar e manter uma aplicação
-**Laravel + Livewire** de forma segura e profissional.
+Este guia descreve o processo completo de **deploy e manutenção** de uma
+aplicação Laravel em **servidores cPanel / Shared Hosting**.
 
 ------------------------------------------------------------------------
 
-# Estrutura recomendada no servidor
+# Estrutura recomendada
+
+Nunca colocar o projecto inteiro dentro de `public_html`.
 
     /home/USER/domains/seu-dominio/
-       ├── espaco-islamico/   ← projeto Laravel (git clone aqui)
-       └── public_html/       ← apenas arquivos públicos
-
-⚠️ **Nunca coloque o projeto inteiro dentro de `public_html`**
+       ├── espaco-islamico/
+       └── public_html/
 
 ------------------------------------------------------------------------
 
-# 1. Primeira instalação (deploy inicial)
+# Deploy inicial
 
-## Entrar na pasta do domínio
+Entrar na pasta do domínio:
 
-``` bash
-cd domains/espacoislamico.com/espaco-islamico
-```
+    cd domains/seu-dominio
 
-## Clonar o projeto
+Clonar projecto:
 
-``` bash
-git clone SEU_REPO_GITHUB espaco-islamico
-cd espaco-islamico
-```
+    git clone URL_DO_REPOSITORIO espaco-islamico
+    cd espaco-islamico
 
 ------------------------------------------------------------------------
 
-# 2. Instalar dependências
+# Instalar dependências
 
-## PHP (produção)
+## PHP
 
-``` bash
-composer install --no-dev --optimize-autoloader
-```
+    composer install --no-dev --optimize-autoloader
 
 ## Node
 
-``` bash
-npm ci
-npm run build
-```
+    npm ci
+    npm run build
 
-Opcional (economizar espaço):
+Opcional:
 
-``` bash
-rm -rf node_modules
-```
+    rm -rf node_modules
 
 ------------------------------------------------------------------------
 
-# 3. Configurar Laravel
+# Configurar Laravel
 
-``` bash
-cp .env.example .env
-php artisan key:generate
-php artisan migrate --force
-```
+    cp .env.example .env
+    php artisan key:generate
+    php artisan migrate --force
 
 ------------------------------------------------------------------------
 
-# 4. Configurar public_html (IMPORTANTE)
+# Configurar public_html
 
-## Limpar pasta pública
+Limpar:
 
-``` bash
-rm -rf ../public_html/*
-```
+    rm -rf ../public_html/*
 
-## Copiar apenas o conteúdo da pasta public
+Copiar:
 
-``` bash
-cp -r public/* ../public_html/
-```
+    cp -r public/* ../public_html/
 
 ------------------------------------------------------------------------
 
-# 5. Ajustar index.php
+# Ajustar index.php
 
-Edite:
+Editar:
 
     public_html/index.php
 
-Substitua:
+Trocar:
 
 ``` php
 require __DIR__.'/../vendor/autoload.php';
@@ -103,15 +87,11 @@ $app = require_once __DIR__.'/../espaco-islamico/bootstrap/app.php';
 
 ------------------------------------------------------------------------
 
-# 6. Garantir .htaccess
+# .htaccess
 
-Copie:
+    cp public/.htaccess ../public_html/
 
-``` bash
-cp public/.htaccess ../public_html/
-```
-
-Conteúdo esperado:
+Conteúdo:
 
     <IfModule mod_rewrite.c>
     RewriteEngine On
@@ -122,107 +102,60 @@ Conteúdo esperado:
 
 ------------------------------------------------------------------------
 
-# 7. Permissões
+# Permissões
 
-``` bash
-chmod -R 755 storage
-chmod -R 755 bootstrap/cache
-```
+    chmod -R 755 storage
+    chmod -R 755 bootstrap/cache
 
 ------------------------------------------------------------------------
 
-# 8. Otimizações (produção)
+# Otimização
 
-``` bash
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-php artisan optimize
-```
+    php artisan config:cache
+    php artisan route:cache
+    php artisan view:cache
+    php artisan optimize
 
 ------------------------------------------------------------------------
 
-# ✅ Deploy de atualizações futuras
+# Atualizar aplicação
 
-Sempre que atualizar o código:
+    git pull
+    composer install --no-dev --optimize-autoloader
+    npm ci
+    npm run build
+    php artisan migrate --force
+    php artisan optimize
 
-``` bash
-cd espaco-islamico
+Se houver alteração em public:
 
-git pull
-composer install --no-dev --optimize-autoloader
-npm ci
-npm run build
-
-php artisan migrate --force
-php artisan optimize
-```
-
-Se alterou algo em public:
-
-``` bash
-cp -r public/* ../public_html/
-```
+    cp -r public/* ../public_html/
 
 ------------------------------------------------------------------------
 
-# Manutenção recomendada
+# Manutenção
 
-## Limpar caches
+Limpar cache:
 
-``` bash
-php artisan optimize:clear
-```
+    php artisan optimize:clear
 
-## Storage link (se usar uploads)
+Criar storage link:
 
-``` bash
-php artisan storage:link
-```
+    php artisan storage:link
 
-## Logs
+Logs:
 
     storage/logs/laravel.log
-
-## Reiniciar permissões
-
-``` bash
-chmod -R 755 storage bootstrap/cache
-```
 
 ------------------------------------------------------------------------
 
 # Boas práticas
 
-✔ Nunca subir vendor/node_modules para GitHub\
-✔ Usar composer --no-dev em produção\
-✔ Sempre rodar optimize\
-✔ Manter .env fora do public_html\
-✔ Fazer backup do banco antes de migrations importantes
+-   Nunca subir `vendor` ou `node_modules`
+-   Usar `composer install --no-dev`
+-   Manter `.env` fora do `public_html`
+-   Fazer backup do banco antes de migrations importantes
 
 ------------------------------------------------------------------------
 
-# Comandos rápidos (resumo)
-
-## Primeiro deploy
-
-    git clone
-    composer install --no-dev
-    npm ci && npm run build
-    cp public/* public_html/
-    php artisan optimize
-
-## Atualização
-
-    git pull
-    composer install --no-dev
-    npm run build
-    php artisan optimize
-
-------------------------------------------------------------------------
-
-Pronto. Sua aplicação estará segura, leve e pronta para produção.
-
-
-
-A criação de jornais no sistema deve ser remodelada para incluir funcionalidades de comercialização opcional, permitindo que determinadas edições possam ser vendidas diretamente ao público. Ao criar um conteúdo do tipo jornal, o formulário deve apresentar os campos básicos já existentes, como título, descrição ou resumo, número da edição, imagem de capa e arquivo PDF da edição, que representa o jornal completo. Além desses campos, deve existir uma seção específica relacionada à venda do jornal. Nessa seção, o utilizador deve poder marcar se o jornal é vendível, através de um campo booleano (por exemplo, uma checkbox “Este jornal é vendido”). Quando essa opção estiver ativada, devem ser exibidos campos adicionais obrigatórios, como o preço do jornal, que define o valor da edição, e o número de WhatsApp, que será utilizado para redirecionar os leitores interessados na compra. Esse número deve ser armazenado em formato internacional para permitir a geração automática de um link do WhatsApp. Na interface pública do site, quando um jornal estiver marcado como vendível, deve ser exibido um botão de compra, como por exemplo “Comprar via WhatsApp”. Ao clicar nesse botão, o utilizador deve ser redirecionado para uma conversa no WhatsApp utilizando o link https://wa.me/NUMERO, podendo opcionalmente incluir uma mensagem automática indicando interesse na edição específica do jornal. Caso o jornal não esteja marcado como vendível, o comportamento padrão deve permanecer, permitindo que o utilizador visualize ou descarregue o PDF normalmente. Dessa forma, o sistema passa a suportar tanto edições gratuitas quanto edições pagas, mantendo a criação de conteúdo simples para os editores e oferecendo um fluxo direto de contacto para a venda através do WhatsApp.
+Aplicação pronta para produção.
